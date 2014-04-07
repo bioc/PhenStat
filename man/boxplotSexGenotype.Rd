@@ -1,13 +1,11 @@
-\name{scatterplotGenotypeWeight}
-\alias{scatterplotGenotypeWeight}
-\title{Method "scatterplotGenotypeWeight"}
+\name{boxplotSexGenotype}
+\alias{boxplotSexGenotype}
+\title{Method "boxplotSexGenotype"}
 \description{
-    Graph function for the phenotypic dataset. Creates a scatter plot body weight versus dependent variable.
-    
-    Both a regression line and a loess line (locally weighted line) is fitted for each genotype.
+    Graph function for the phenotypic dataset. Creates a box plot split by sex and genotype.
 }
 \usage{
-    scatterplotGenotypeWeight(phenList,depVariable=NULL,graphingName=NULL,outputMessages=TRUE)
+    boxplotSexGenotype(phenList,depVariable=NULL,graphingName=NULL,outputMessages=TRUE)
 }
 \arguments{
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}
@@ -27,13 +25,16 @@
     file <- system.file("extdata", "test1.csv", package="PhenStat")
     test <- PhenList(dataset=read.csv(file),
             testGenotype="Sparc/Sparc")
-    scatterplotGenotypeWeight(test,
-            depVariable="Bone.Mineral.Content",
-            graphingName="BMC" )
+    # box plot for dataset with two sexes: males and females
+    boxplotSexGenotype(test,
+            depVariable="Bone.Mineral.Content", 
+            graphingName="BMC")
+    
     file <- system.file("extdata", "test4.csv", package="PhenStat")
     test_1sex <- PhenList(dataset=read.csv(file),
             testGenotype="Mysm1/+")
-    scatterplotGenotypeWeight(test_1sex,
+    # box plot for females only dataset
+    boxplotSexGenotype(test_1sex,
             depVariable="Lean.Mass", 
-            graphingName="Lean Mass")
+            graphingName="Lean Mass (g)")
 }

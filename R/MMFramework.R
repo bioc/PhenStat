@@ -23,8 +23,8 @@
 ## homogeneous and FALSE if they are heterogeneous),
 
 ## Fixed effects:
-## - interaction effect (genotype by gender interaction significance),
-## - gender effect (gender significance),
+## - interaction effect (genotype by sex interaction significance),
+## - sex effect (sex significance),
 ## - weigth effect (weigth significance).
 
 ## If user would like to assign other TRUE/FALSE values to the effects of
@@ -49,341 +49,299 @@ startModel <- function(phenList, depVariable, equation="withWeight",
     if (!is.null(keepList)){
         ## User's values for effects
         user_keep_weight <- keepList[3]
-        user_keep_gender <- keepList[4]
+        user_keep_sex <- keepList[4]
         user_keep_interaction <- keepList[5]
         user_keep_batch <- keepList[1]
         user_keep_equalvar <- keepList[2]
         
         if (!('Weight' %in% colnames(x)) && user_keep_weight){
             if (outputMessages)
-            message("Warning:\nWeight column is missed in the dataset.
-                    'keepWeight' is set to FALSE.")
+            message("Warning:\nWeight column is missed in the dataset. 'keepWeight' is set to FALSE.")
             
             user_keep_weight <- FALSE
         }
         
         if (!('Batch' %in% colnames(x)) && user_keep_batch){
             if (outputMessages)
-            message("Warning:\nBatch column is missed in the dataset.
-                    'keepBatch' is set to FALSE.")
+            message("Warning:\nBatch column is missed in the dataset. 'keepBatch' is set to FALSE.")
             
             user_keep_batch <- FALSE
         }
         
     }
     
-    numberofgenders <- length(levels(x$Gender))
+    numberofsexes <- length(levels(x$Sex))
     
     
     ## Start model formula: homogenous residual variance,
     ## genotype and sex interaction included
-    model.formula  <- modelFormula(equation,numberofgenders, depVariable)
+    model.formula  <- modelFormula(equation,numberofsexes, depVariable)
     
-    if ('Batch' %in% colnames(x)){
-        ## GLS fit of model formula (no random effects)
-        ## Model 1A (model_withoutbatch)
-        model_withoutbatch <- do.call("gls",
-                args=list(model.formula, x, na.action="na.omit"))
-        ## MM fit of model formula (with random effects)
-        ## Model 1 (model_MM)
-        model_MM <-
-        tryCatch(
-                model_MM <- do.call("lme", args = list(model.formula,
-                                random=~1|Batch, data = x, na.action="na.omit", method="REML")),
-                error=function(error_mes) {
-                    if (outputMessages)
-                    message("Warning:\nMixed model with batch effect
-                            as random effect is not fitting - false convergence.\n
-                            Mixed model with no random effects is used instead.\n")
+    #START OF tryCatch    
+    finalResult <- tryCatch({
+                
+                if ('Batch' %in% colnames(x)){
+                    ## GLS fit of model formula (no random effects)
+                    ## Model 1A (model_withoutbatch)
+                    model_withoutbatch <- do.call("gls",
+                            args=list(model.formula, x, na.action="na.omit"))
+                    ## MM fit of model formula (with random effects)
+                    ## Model 1 (model_MM)
+                    model_MM <- do.call("lme", args = list(model.formula,
+                                            random=~1|Batch, data = x, na.action="na.omit", method="REML"))
+                    ## Test: the random effects associated with batch intercepts can be
+                    ## ommited from model
+                    ## Hypothesis 1
+                    ## Null Hypothesis: variance of batch = 0
+                    ## Alternative Hypothesis: variance of batch > 0
+                    ## For the division by 2 explanations see p.80 of "Linear Mixed Models"
+
+                    p.value.batch <- (anova(model_MM, model_withoutbatch)$"p-value"[2])/2
+                    ## The result of the test for Hypothesis 1 will help to select
+                    ## the structure for random effects
+                    keep_batch <- p.value.batch<pThreshold
+                                        
+                    ## MM fit of model formula with heterogeneous residual variances for
+                    ## genotype groups
+                    ## Model 1 assumes homogeneous residual variances
+                    ## Model 2 with heterogeneous residual variances
+                    model_hetvariance <- do.call("lme", args=list(model.formula,
+                                            random=~1|Batch, x, weights=varIdent(form=~1|Genotype),
+                                            na.action="na.omit", method="REML"))
                     
-                    model_MM <- NULL
+
+                    ## Test: the variance of the residuals is the same (homogeneous)
+                    ## for all genotype groups
+                    ## Hypothesis 2
+                    ## Null Hypothesis: all residual variances are equal
+                    ## Alternative Hypothesis: the residue variance is not equal
+                    p.value.variance <- (anova(model_MM, model_hetvariance)$"p-value"[2])
+                    ## The result of the test for Hypothesis 2 will help to select a
+                    ## covariance structure for the residuals
+                    keep_equalvar <- p.value.variance>pThreshold
+                 
                 }
-                )
-        ## Test: the random effects associated with batch intercepts can be
-        ## ommited from model
-        ## Hypothesis 1
-        ## Null Hypothesis: variance of batch = 0
-        ## Alternative Hypothesis: variance of batch > 0
-        ## For the division by 2 explanations see p.80 of "Linear Mixed Models"
-        if (!is.null(model_MM)) {
-            p.value.batch <- (anova(model_MM, model_withoutbatch)$p[2])/2
-            ## The result of the test for Hypothesis 1 will help to select
-            # the structure for random effects
-            keep_batch <- p.value.batch<pThreshold
-            
-        }
-        else {
-            keep_batch <- FALSE
-            if (!is.null(keepList)){
-                if (outputMessages && user_defined_batch)
-                message("Warning:\n'keepBatch' is set to FALSE otherwise
-                        the model can't be fitted - false convergence.\n")
-                
-                user_defined_batch <- FALSE
-            }
-            model_MM <- model_withoutbatch
-        }
-        
-        ## MM fit of model formula with heterogeneous residual variances for
-        ## genotype groups
-        ## Model 1 assumes homogeneous residual variances
-        ## Model 2 with heterogeneous residual variances
-        model_hetvariance <-
-        tryCatch(
-                model_hetvariance <- do.call("lme", args=list(model.formula,
-                                random=~1|Batch, x, weights=varIdent(form=~1|Genotype),
-                                na.action="na.omit", method="REML")),
-                error=function(error_mes) {
-                    if (outputMessages)
-                    message("Warning:\nMixed model with heterogeneous
-                            residual variances for genotype groups is not
-                            fitting - false convergence.\nMixed model with
-                            homogeneous residual variances is used instead.\n")
+                else {
+                    ## No Batch effects
+                    keep_batch <- FALSE
                     
-                    model_hetvariance <- NULL
-                }
-                )
-        
-        if (!is.null(model_hetvariance)) {
-            ## Test: the variance of the residuals is the same (homogeneous)
-            ## for all genotype groups
-            ## Hypothesis 2
-            ## Null Hypothesis: all residual variances are equal
-            ## Alternative Hypothesis: the residue variance is not equal
-            p.value.variance <- (anova(model_MM, model_hetvariance)$p[2])
-            ## The result of the test for Hypothesis 2 will help to select a
-            ## covariance structure for the residuals
-            keep_equalvar <- p.value.variance>pThreshold
-        }
-        else {
-            keep_equalvar <- TRUE
-            if (!is.null(keepList)){
-                if (outputMessages && !user_keep_equalvar)
-                message("Warning:\n'keepEqualVariance' is set to TRUE
-                        otherwise the model can't be fitted - false convergence.\n")
-                
-                user_keep_equalvar <- TRUE
-            }
-        }
-    }
-    else {
-        ## No Batch effects
-        keep_batch <- FALSE
-        
-        ## Model 1A (model_withoutbatch)
-        model_MM <- do.call("gls",
-                args=list(model.formula, x, na.action="na.omit"))
-        
-        ## MM fit of model formula with heterogeneous residual variances for
-        ## genotype groups
-        ## Model 1 assumes homogeneous residual variances
-        ## Model 2 with heterogeneous residual variances
-        model_hetvariance <-
-        tryCatch(
-                model_hetvariance <- do.call("gls", args=list(model.formula, x,
-                                weights=varIdent(form=~1|Genotype), na.action="na.omit")),
-                error=function(error_mes) {
-                    if (outputMessages)
-                    message("Warning:\nMixed model with heterogeneous
-                            residual variances for genotype groups is not
-                            fitting - false convergence.\nMixed model with
-                            homogeneous residual variances is used instead.\n")
+                    ## Model 1A (model_withoutbatch)
+                    model_MM <- do.call("gls",
+                            args=list(model.formula, x, na.action="na.omit"))
                     
-                    model_hetvariance <- NULL
+                    model_withoutbatch <- model_MM
+                    
+                    ## MM fit of model formula with heterogeneous residual variances for
+                    ## genotype groups
+                    ## Model 1 assumes homogeneous residual variances
+                    ## Model 2 with heterogeneous residual variances
+                    model_hetvariance <- do.call("gls", args=list(model.formula, x,
+                                            weights=varIdent(form=~1|Genotype), na.action="na.omit"))
+
+                    ## Test: the variance of the residuals is the same (homogeneous)
+                    ## for all genotype groups
+                    ## Hypothesis 2
+                    ## Null Hypothesis: all residual variances are equal
+                    ## Alternative Hypothesis: the residue variance is not equal
+                    p.value.variance <- (anova(model_MM, model_hetvariance)$"p-value"[2])
+                    ## The result of the test for Hypothesis 2 will help to select a
+                    ## covariance structure for the residuals
+                    keep_equalvar <- p.value.variance>pThreshold
+                    
+                    
                 }
-                )
-        
-        if (!is.null(model_hetvariance)) {
-            ## Test: the variance of the residuals is the same (homogeneous)
-            ## for all genotype groups
-            ## Hypothesis 2
-            ## Null Hypothesis: all residual variances are equal
-            ## Alternative Hypothesis: the residue variance is not equal
-            p.value.variance <- (anova(model_MM, model_hetvariance)$p[2])
-            ## The result of the test for Hypothesis 2 will help to select a
-            ## covariance structure for the residuals
-            keep_equalvar <- p.value.variance>pThreshold
-        }
-        else {
-            keep_equalvar <- TRUE
-            if (!is.null(keepList)){
-                if (outputMessages && !user_keep_equalvar)
-                message("Warning:\n'keepEqualVariance' is set to TRUE
-                        otherwise the model can't be fitted - false convergence.\n")
                 
-                user_keep_equalvar <- TRUE
-            }
-        }
-        
-    }
-    
-    
-    ## Model fit is selected according to test results
-    if(keep_batch && keep_equalvar){
-        ## Model 1
-        model <- model_MM
-    }else if(keep_batch && !keep_equalvar){
-        ## Model 2
-        model <- model_hetvariance
-    }else if(!keep_batch && keep_equalvar){
-        ## Model 1A
-        model= model_withoutbatch
-    }else if(!keep_batch && !keep_equalvar){
-        ## Modify model 1A to heterogeneous residual variances
-        model <- do.call("gls", args=list(model.formula,
-                        weights=varIdent(form=~1|Genotype), x, na.action="na.omit"))
-    }
-    
-    
-    ## Tests for significance of fixed effects using TypeI F-test from anova
-    ## functionality by using selected model
-    anova_results <- anova(model, type="marginal")$"p-value" < pThreshold
-    
-    if(numberofgenders==2){
-        ## Result of the test for gender significance (fixed effect 1.)
-        keep_gender <- anova_results[3]
-        ## Eq.2
-        if (equation=="withWeight"){
-            ## Result of the test for weight significance  (fixed effect 3.)
-            
-            keep_weight <- anova_results[4]
-            ## Result of the test for genotype by gender interaction
-            ## significance (fixed effect 2.)
-            keep_interaction <- anova_results[5]
-            
-            ## Technical results needed for the output
-            ## Interaction test results are kept for the output
-            interactionTest <- anova(model, type="marginal")$"p-value"[5]
-            
-        }
-        ## Eq.1
-        else{
-            ## Result of the test for weight significance  (fixed effect 3.)
-            ## It's FALSE since here the equation 1 is used - without weight
-            ## effect
-            keep_weight <- FALSE
-            ## Result of the test for genotype by gender interaction
-            ## significance (fixed effect 2.)
-            keep_interaction <- anova_results[4]
-            ## Interaction test results are kept for the output
-            interactionTest <- anova(model, type="marginal")$"p-value"[4]
-        }
-    }
-    else {
-        keep_gender <- FALSE
-        keep_interaction <- FALSE
-        interactionTest <- NA
-        if (equation=="withWeight")
-        keep_weight <- anova_results[3]
-        else
-        keep_weight <- FALSE
-    }
-    
-    if (!keep_weight && equation=="withWeight") {
-        equation="withoutWeight"
-        if (outputMessages)
-        message("Since weight effect is not significant the equation
-                Eq.1 'withoutWeight' should be used instead.")
-    }
-    
-    if (outputMessages)
-    message(paste("Information:\nCalculated values for model effects are:
-                    keepBatch=",keep_batch,
-                    ", keepEqualVariance=",keep_equalvar,
-                    ", keepWeight=",keep_weight,
-                    ", keepGender=",keep_gender,
-                    ", keepInteraction=",keep_interaction,".\n",sep=""))
-    
-    ## Results for user defined model effects values
-    if (!is.null(keepList)){
-        if (outputMessages)
-        message(paste("Information:\nUser's values for model effects are:
-                        keepBatch=",user_keep_batch,
-                        ", keepEqualVariance=",user_keep_equalvar,
-                        ", keepWeight=",user_keep_weight,
-                        ", keepGender=",user_keep_gender,
-                        ", keepInteraction=",user_keep_interaction,".\n",sep=""))
-        ## Model fit is selected according to user defined model effects
-        if(user_keep_batch && user_keep_equalvar){
-            ## Model 1
-            model <- model_MM
-        }else if(user_keep_batch && !user_keep_equalvar){
-            ## Model 2
-            model <- model_hetvariance
-        }else if(!user_keep_batch && user_keep_equalvar){
-            ## Model 1A
-            model <- model_withoutbatch
-        }else if(!user_keep_batch && !user_keep_equalvar){
-            ## Modify model 1A to heterogeneous residual variances
-            model <- do.call("gls", args=list(model.formula,
-                            weights=varIdent(form=~1|Genotype), x, na.action="na.omit"))
-        }
-        
-        if(numberofgenders==2){
-            if (equation=="withWeight"){
-                interactionTest <- anova(model, type="marginal")$"p-value"[5]
+                
+                ## Model fit is selected according to test results
+                if(keep_batch && keep_equalvar){
+                    ## Model 1
+                    model <- model_MM
+                }else if(keep_batch && !keep_equalvar){
+                    ## Model 2
+                    model <- model_hetvariance
+                }else if(!keep_batch && keep_equalvar){
+                    ## Model 1A
+                    model= model_withoutbatch
+                }else if(!keep_batch && !keep_equalvar){
+                    ## Modify model 1A to heterogeneous residual variances
+                    model <- do.call("gls", args=list(model.formula,
+                                    weights=varIdent(form=~1|Genotype), x, na.action="na.omit"))
+                }
+                
+                
+                ## Tests for significance of fixed effects using TypeI F-test from anova
+                ## functionality by using selected model
+                anova_results <- anova(model, type="marginal")$"p-value" < pThreshold
+                
+                if(numberofsexes==2){
+                    ## Result of the test for sex significance (fixed effect 1.)
+                    keep_sex <- anova_results[3]
+                    ## Eq.2
+                    if (equation=="withWeight"){
+                        ## Result of the test for weight significance  (fixed effect 3.)
+                        
+                        keep_weight <- anova_results[4]
+                        ## Result of the test for genotype by sex interaction
+                        ## significance (fixed effect 2.)
+                        keep_interaction <- anova_results[5]
+                        
+                        ## Technical results needed for the output
+                        ## Interaction test results are kept for the output
+                        interactionTest <- anova(model, type="marginal")$"p-value"[5]
+                        
+                    }
+                    ## Eq.1
+                    else{
+                        ## Result of the test for weight significance  (fixed effect 3.)
+                        ## It's FALSE since here the equation 1 is used - without weight
+                        ## effect
+                        keep_weight <- FALSE
+                        ## Result of the test for genotype by sex interaction
+                        ## significance (fixed effect 2.)
+                        keep_interaction <- anova_results[4]
+                        ## Interaction test results are kept for the output
+                        interactionTest <- anova(model, type="marginal")$"p-value"[4]
+                    }
+                }
+                else {
+                    keep_sex <- FALSE
+                    keep_interaction <- FALSE
+                    interactionTest <- NA
+                    if (equation=="withWeight")
+                    keep_weight <- anova_results[3]
+                    else
+                    keep_weight <- FALSE
+                }
+                
+                if (!keep_weight && equation=="withWeight") {
+                    equation="withoutWeight"
+                    if (outputMessages)
+                    message(paste("Since weight effect is not significant the equation ",
+                                    "'withoutWeight' should be used instead.",sep=""))
+                }
+                
+                if (outputMessages)
+                message(paste("Information:\nEquation: '",equation,"'.\n",sep=""))
+                
+                if (outputMessages)
+                message(paste("Information:\nCalculated values for model effects are: ",
+                                "keepBatch=",keep_batch,
+                                ", keepEqualVariance=",keep_equalvar,
+                                ", keepWeight=",keep_weight,
+                                ", keepSex=",keep_sex,
+                                ", keepInteraction=",keep_interaction,".\n",sep=""))
+                
+                ## Results for user defined model effects values
+                if (!is.null(keepList)){
+                    if (outputMessages)
+                    message(paste("Information:\nUser's values for model effects are: ",
+                                    "keepBatch=",user_keep_batch,
+                                    ", keepEqualVariance=",user_keep_equalvar,
+                                    ", keepWeight=",user_keep_weight,
+                                    ", keepSex=",user_keep_sex,
+                                    ", keepInteraction=",user_keep_interaction,".\n",sep=""))
+                    ## Model fit is selected according to user defined model effects
+                    if(user_keep_batch && user_keep_equalvar){
+                        ## Model 1
+                        model <- model_MM
+                    }else if(user_keep_batch && !user_keep_equalvar){
+                        ## Model 2
+                        model <- model_hetvariance
+                    }else if(!user_keep_batch && user_keep_equalvar){
+                        ## Model 1A
+                        model <- model_withoutbatch
+                    }else if(!user_keep_batch && !user_keep_equalvar){
+                        ## Modify model 1A to heterogeneous residual variances
+                        model <- do.call("gls", args=list(model.formula,
+                                        weights=varIdent(form=~1|Genotype), x, na.action="na.omit"))
+                    }
+                    
+                    if(numberofsexes==2){
+                        if (equation=="withWeight"){
+                            interactionTest <- anova(model, type="marginal")$"p-value"[5]
+                            
+                        }
+                        else{
+                            interactionTest <- anova(model, type="marginal")$"p-value"[4]
+                            
+                        }
+                    }
+                    else {
+                        interactionTest <- NA
+                    }
+                    
+                    compList <- (keepList==c(keep_batch,keep_equalvar,keep_weight,
+                                    keep_sex,keep_interaction))
+                    
+                    if (length(compList[compList==FALSE])>0 && outputMessages)
+                    message("Warning:\nCalculated values differ from user defined values for model effects.\n")
+                    
+                    keep_weight <- user_keep_weight
+                    keep_sex <- user_keep_sex
+                    keep_interaction <- user_keep_interaction
+                    keep_batch <- user_keep_batch
+                    keep_equalvar <- user_keep_equalvar
+                    
+                }
+                
+                
+                finalResult <- new("PhenTestResult",list(
+                                model.dataset=x,
+                                model.output=model,
+                                depVariable=depVariable,
+                                equation=equation,
+                                method="MM",
+                                model.effect.batch=keep_batch,
+                                model.effect.variance=keep_equalvar,
+                                model.effect.interaction=keep_interaction,
+                                model.output.interaction=interactionTest,
+                                model.effect.sex=keep_sex,
+                                model.effect.weight=keep_weight,
+                                numberSexes=numberofsexes,
+                                pThreshold=pThreshold,
+                                model.formula.genotype=model.formula))
+            },
+            #END OF tryCatch    
+            error=function(error_mes) {
+                finalResult <- NULL
+                if (equation=="withWeight") 
+                stop_message <- paste("Error:\nCan't fit the model ",
+                        format(model.formula),". Try MM with equation 'withoutWeight'. ",
+                        "Another option is jitter.\n",sep="")
+                else
+                stop_message <- paste("Error:\nCan't fit the model ",
+                        format(model.formula),". Try to add jitter or RR plus method.\n",sep="")
+                
+                if (outputMessages){
+                    message(stop_message)
+                    opt <- options(show.error.messages=FALSE)
+                    on.exit(options(opt))
+                    stop()
+                }
+                else {
+                    stop(stop_message)
+                }
                 
             }
-            else{
-                interactionTest <- anova(model, type="marginal")$"p-value"[4]
-                
-            }
-        }
-        else {
-            interactionTest <- NA
-        }
-        
-        compList <- (keepList==c(keep_batch,keep_equalvar,keep_weight,
-                        keep_gender,keep_interaction))
-        
-        if (length(compList[compList==FALSE])>0 && outputMessages)
-        message("Warning:\nCalculated values differ from user defined values
-                for model effects.\n")
-        
-        keep_weight <- user_keep_weight
-        keep_gender <- user_keep_gender
-        keep_interaction <- user_keep_interaction
-        keep_batch <- user_keep_batch
-        keep_equalvar <- user_keep_equalvar
-        
-    }
+            )        
+    return(finalResult)
     
-    if (outputMessages)
-    message(paste("Information:\nEquation: '",equation,"'.\n",sep=""))
-    
-    
-    result <- new("PhenTestResult",list(
-                    model.dataset=x,
-                    model.output=model,
-                    depVariable=depVariable,
-                    equation=equation,
-                    method="MM",
-                    model.effect.batch=keep_batch,
-                    model.effect.variance=keep_equalvar,
-                    model.effect.interaction=keep_interaction,
-                    model.output.interaction=interactionTest,
-                    model.effect.gender=keep_gender,
-                    model.effect.weight=keep_weight,
-                    numberGenders=numberofgenders,
-                    pThreshold=pThreshold,
-                    model.formula.genotype=model.formula))
-    return(result)
 }
 
 ##------------------------------------------------------------------------------
-## Creates formula for the start model based on equation and number of genders
+## Creates formula for the start model based on equation and number of sexes
 ## in the data
-modelFormula <- function(equation, numberofgenders, depVariable)
+modelFormula <- function(equation, numberofsexes, depVariable)
 {
     
     model.formula <- switch(equation,
             ## Eq.2
             withWeight = {
-                ## Fixed effects: 1) Genotype 2) Gender 3) Genotype by Gender
+                ## Fixed effects: 1) Genotype 2) Sex 3) Genotype by Sex
                 ## interaction 4) Weight
-                if(numberofgenders==2){
+                if(numberofsexes==2){
                     as.formula(paste(depVariable, "~", paste("Genotype",
-                                            "Gender", "Genotype*Gender","Weight", sep= "+")))
+                                            "Sex", "Genotype*Sex","Weight", sep= "+")))
                 }else{
                     as.formula(paste(depVariable, "~", paste("Genotype",
                                             "Weight",  sep= "+")))
@@ -391,11 +349,11 @@ modelFormula <- function(equation, numberofgenders, depVariable)
             },
             ## Eq.1
             withoutWeight = {
-                ## Fixed effects: 1) Genotype 2) Gender 3) Genotype by Gender
+                ## Fixed effects: 1) Genotype 2) Sex 3) Genotype by Sex
                 ## interaction
-                if(numberofgenders==2){
+                if(numberofsexes==2){
                     as.formula(paste(depVariable, "~",
-                                    paste("Genotype", "Gender", "Genotype*Gender", sep= "+")))
+                                    paste("Genotype", "Sex", "Genotype*Sex", sep= "+")))
                 }else{
                     as.formula(paste(depVariable, "~",
                                     paste("Genotype",  sep= "+")))
@@ -421,20 +379,19 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
         depVariable <- result$depVariable
         equation <- result$equation
         keep_weight <- result$model.effect.weight
-        keep_gender <- result$model.effect.gender
+        keep_sex <- result$model.effect.sex
         keep_interaction <- result$model.effect.interaction
         keep_batch <- result$model.effect.batch
         keep_equalvar <- result$model.effect.variance
         
         ## Stop function if there are no datasets to work with
         if(is.null(x))
-        stop_message <- "Error:\nPlease create a PhenList object first and
-        run function 'testDataset'.\n"
+        stop_message <- "Error:\nPlease create a PhenList object first and run function 'testDataset'.\n"
         
         ## Stop function if there are no enough input parameters
         if (is.null(equation) || is.null(depVariable) || is.null(keep_batch)
                 || is.null(keep_equalvar)
-                || is.null(keep_gender) || is.null(keep_interaction))
+                || is.null(keep_sex) || is.null(keep_interaction))
         stop_message <- "Error:\nPlease run function 'testDataset' first.\n"
     }
     else{
@@ -442,17 +399,21 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
     }
     
     
-    if (nchar(stop_message)>1){
-        if (outputMessages)
-        message(stop_message)
-        opt <- options(show.error.messages=FALSE)
-        on.exit(options(opt))
-        stop()
+    if (nchar(stop_message)>0){
+        if (outputMessages){
+            message(stop_message)
+            opt <- options(show.error.messages=FALSE)
+            on.exit(options(opt))
+            stop()
+        }
+        else {
+            stop(stop_message)
+        }
     }
     
     ## END Checks and stop messages
     
-    numberofgenders <- result$numberGenders
+    numberofsexes <- result$numberSexes
     
     
     ## Build final null model
@@ -475,13 +436,13 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
     model_null.formula <- switch(equation,
             withWeight = {
                 ## Eq.2
-                if(numberofgenders==2){
-                    if(!keep_gender){
+                if(numberofsexes==2){
+                    if(!keep_sex){
                         as.formula(paste(depVariable, "~", "Weight"))
                         
                     }else{
                         as.formula(paste(depVariable, "~", 
-                                        paste("Gender", "Weight", sep= "+")))
+                                        paste("Sex", "Weight", sep= "+")))
                     }
                 }else{
                     as.formula(paste(depVariable, "~", "Weight"))
@@ -489,11 +450,11 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
             },
             withoutWeight = {
                 ## Eq.1
-                if(numberofgenders==2){
-                    if(!keep_gender && !keep_interaction){
+                if(numberofsexes==2){
+                    if(!keep_sex && !keep_interaction){
                         as.formula(paste(depVariable, "~", "1"))
                     }else{
-                        as.formula(paste(depVariable, "~", "Gender"))
+                        as.formula(paste(depVariable, "~", "Sex"))
                     }
                 }else{
                     as.formula(paste(depVariable, "~", "1"))
@@ -505,17 +466,17 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
     model_genotype.formula <- switch(equation,
             withWeight = {
                 ## Eq.2
-                if(numberofgenders==2){
-                    if ((keep_gender && keep_weight && keep_interaction)|
-                            (!keep_gender && keep_weight && keep_interaction)){
+                if(numberofsexes==2){
+                    if ((keep_sex && keep_weight && keep_interaction)|
+                            (!keep_sex && keep_weight && keep_interaction)){
                         as.formula(paste(depVariable, "~",
-                                        paste("Gender", "Genotype:Gender", "Weight", sep= "+")))
+                                        paste("Sex", "Genotype:Sex", "Weight", sep= "+")))
                         
-                    } else if(keep_gender && keep_weight && !keep_interaction){
+                    } else if(keep_sex && keep_weight && !keep_interaction){
                         as.formula(paste(depVariable, "~",
-                                        paste("Genotype", "Gender", "Weight", sep= "+")))
+                                        paste("Genotype", "Sex", "Weight", sep= "+")))
                         
-                    } else if(!keep_gender && keep_weight && !keep_interaction){
+                    } else if(!keep_sex && keep_weight && !keep_interaction){
                         as.formula(paste(depVariable, "~",
                                         paste("Genotype", "Weight", sep= "+")))
                     }
@@ -527,16 +488,16 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
             },
             withoutWeight = {
                 ## Eq.1
-                if(numberofgenders==2){
-                    if (!keep_gender  && !keep_interaction){
+                if(numberofsexes==2){
+                    if (!keep_sex  && !keep_interaction){
                         as.formula(paste(depVariable, "~", "Genotype"))
-                    } else if((keep_gender && keep_interaction)|
-                            (!keep_gender && keep_interaction)){
+                    } else if((keep_sex && keep_interaction)|
+                            (!keep_sex && keep_interaction)){
                         as.formula(paste(depVariable, "~",
-                                        paste("Gender",  "Genotype:Gender", sep= "+")))
-                    } else if(keep_gender && !keep_interaction){
+                                        paste("Sex",  "Genotype:Sex", sep= "+")))
+                    } else if(keep_sex && !keep_interaction){
                         as.formula(paste(depVariable, "~",
-                                        paste("Genotype","Gender", sep= "+")))
+                                        paste("Genotype","Sex", sep= "+")))
                     }
                 }else{
                     as.formula(paste(depVariable, "~", paste("Genotype")))
@@ -544,82 +505,112 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
             }
             )
     
-    
-    ## Test: genotype groups association with dependent variable
-    ## Null Hypothesis: genotypes are not associated with dependent variable
-    ## Alternative Hypothesis: genotypes are associated with dependent
-    ## variable
-    if(keep_batch && keep_equalvar){
-        model_genotype <- do.call("lme", args = list(model_genotype.formula,
-                        random=~1|Batch, x, na.action="na.omit", method="ML"))
-        
-        model_null <- do.call("lme", args=list(model_null.formula, x,
-                        random=~1|Batch, na.action="na.omit",  method="ML"))
-        
-        p.value <- (anova(model_genotype, model_null)$p[2])
-    }else if(keep_batch && !keep_equalvar){
-        model_genotype <- do.call("lme", args = list(model_genotype.formula,
-                        random=~1|Batch, x,weights=varIdent(form=~1|Genotype),
-                        na.action="na.omit", method="ML"))
-        
-        model_null <- do.call("lme", args=list(model_null.formula, x,
-                        random=~1|Batch,weights=varIdent(form=~1|Genotype),
-                        na.action="na.omit",  method="ML"))
-        
-        p.value <- (anova(model_genotype, model_null)$p[2])
-    }else if(!keep_batch && !keep_equalvar){
-        model_genotype <- do.call("gls", args = list(model_genotype.formula,
-                        x,weights=varIdent(form=~1|Genotype),method="ML", na.action="na.omit"))
-        
-        model_null <- do.call("gls", args=list(model_null.formula,
-                        x,weights=varIdent(form=~1|Genotype),method="ML", na.action="na.omit"))
-        
-        p.value <- (anova(model_genotype, model_null)$p[2])
-    }else if(!keep_batch && keep_equalvar){
-        model_genotype <- do.call("gls", args = list(model_genotype.formula,
-                        x, method="ML", na.action="na.omit"))
-        
-        model_null <- do.call("gls", args=list(model_null.formula, x,
-                        method="ML", na.action="na.omit"))
-        
-        p.value <- (anova(model_genotype, model_null)$p[2])
-    }
-    
-    ## Final model version with na.exclude and REML method
-    if(keep_batch && keep_equalvar){
-        ## Model 1
-        model_genotype <- do.call("lme", args = list(model_genotype.formula,
-                        random=~1|Batch, x, na.action="na.exclude", method="REML"))
-    }else if(keep_batch && !keep_equalvar){
-        ## Model 2
-        model_genotype <- do.call("lme", args = list(model_genotype.formula,
-                        random=~1|Batch, x,weights=varIdent(form=~1|Genotype),
-                        na.action="na.exclude", method="REML"))
-    }else if(!keep_batch && !keep_equalvar){
-        ## Model 2A
-        model_genotype <- do.call("gls", args = list(model_genotype.formula,
-                        x,weights=varIdent(form=~1|Genotype), na.action="na.exclude"))
-    }else if(!keep_batch && keep_equalvar){
-        ## Model 1A
-        model_genotype <- do.call("gls", args = list(model_genotype.formula,
-                        x, na.action="na.exclude"))
-    }
-    
-    
-    ## Store the results
-    result$model.output <- model_genotype
-    result$model.null <- model_null
-    result$model.output.genotype.nulltest.pVal <- p.value
-    result$model.formula.null <- model_null.formula
-    result$model.formula.genotype <- model_genotype.formula
-    
-    ## Assign MM quality of fit
-    result$model.output.quality <- testFinalModel(result)
-    
-    ## Parse modeloutput and choose output depending on model
-    result$model.output.summary <- parserOutputSummary(result)
-    
-    return(result)
+    finalResult <- tryCatch( {   
+                ## Test: genotype groups association with dependent variable
+                ## Null Hypothesis: genotypes are not associated with dependent variable
+                ## Alternative Hypothesis: genotypes are associated with dependent
+                ## variable
+                if(keep_batch && keep_equalvar){
+
+                    model_genotype <-  do.call("lme", args = list(model_genotype.formula,
+                                            random=~1|Batch, x, na.action="na.omit", method="ML"))
+                    
+                    model_null <- do.call("lme", args=list(model_null.formula, x,
+                                    random=~1|Batch, na.action="na.omit",  method="ML"))
+                    p.value <- (anova(model_genotype, model_null)$"p-value"[2])
+                   
+                }
+                if(keep_batch && !keep_equalvar){
+                    model_genotype <- do.call("lme", args = list(model_genotype.formula,
+                                    random=~1|Batch, x,weights=varIdent(form=~1|Genotype),
+                                    na.action="na.omit", method="ML"))
+                    
+                    model_null <- do.call("lme", args=list(model_null.formula, x,
+                                    random=~1|Batch,weights=varIdent(form=~1|Genotype),
+                                    na.action="na.omit",  method="ML"))
+                    
+                    p.value <- (anova(model_genotype, model_null)$"p-value"[2])
+                }else if(!keep_batch && !keep_equalvar){
+                    model_genotype <- do.call("gls", args = list(model_genotype.formula,
+                                    x,weights=varIdent(form=~1|Genotype),method="ML", na.action="na.omit"))
+                    
+                    model_null <- do.call("gls", args=list(model_null.formula,
+                                    x,weights=varIdent(form=~1|Genotype),method="ML", na.action="na.omit"))
+                    
+                    p.value <- (anova(model_genotype, model_null)$"p-value"[2])
+                }else if(!keep_batch && keep_equalvar){
+                    model_genotype <- do.call("gls", args = list(model_genotype.formula,
+                                    x, method="ML", na.action="na.omit"))
+                    
+                    model_null <- do.call("gls", args=list(model_null.formula, x,
+                                    method="ML", na.action="na.omit"))
+                    
+                    p.value <- (anova(model_genotype, model_null)$"p-value"[2])
+                }
+                
+                ## Final model version with na.exclude and REML method
+                if(keep_batch && keep_equalvar){
+                    ## Model 1
+                    model_genotype <- do.call("lme", args = list(model_genotype.formula,
+                                    random=~1|Batch, x, na.action="na.exclude", method="REML"))
+                }else if(keep_batch && !keep_equalvar){
+                    ## Model 2
+                    model_genotype <- do.call("lme", args = list(model_genotype.formula,
+                                    random=~1|Batch, x,weights=varIdent(form=~1|Genotype),
+                                    na.action="na.exclude", method="REML"))
+                }else if(!keep_batch && !keep_equalvar){
+                    ## Model 2A
+                    model_genotype <- do.call("gls", args = list(model_genotype.formula,
+                                    x,weights=varIdent(form=~1|Genotype), na.action="na.exclude"))
+                }else if(!keep_batch && keep_equalvar){
+                    ## Model 1A
+                    model_genotype <- do.call("gls", args = list(model_genotype.formula,
+                                    x, na.action="na.exclude"))
+                }
+                
+                
+                ## Store the results
+                result$model.output <- model_genotype
+                result$model.null <- model_null
+                result$model.output.genotype.nulltest.pVal <- p.value
+                result$model.formula.null <- model_null.formula
+                result$model.formula.genotype <- model_genotype.formula
+                result$model.effect.variance <- keep_equalvar
+                
+                ## Assign MM quality of fit
+                result$model.output.quality <- testFinalModel(result)
+                
+                ## Parse modeloutput and choose output depending on model
+                result$model.output.summary <- parserOutputSummary(result)
+                
+                finalResult <- result
+            },
+            
+            # End of tryCatch statement - if fails try to suggest smth useful for the user
+            error=function(error_mes) {
+                
+                finalResult <- NULL
+                if (equation=="withWeight") 
+                stop_message <- paste("Error:\nCan't fit the model ",
+                        format(model_genotype.formula),". Try MM with equation 'withoutWeight'. ",
+                        "Another option is jitter\n",sep="")
+                else
+                stop_message <- paste("Error:\nCan't fit the model ",
+                        format(model_genotype.formula),". Try to add jitter or RR plus method.\n",sep="")
+                
+                if (outputMessages){
+                    message(stop_message)
+                    opt <- options(show.error.messages=FALSE)
+                    on.exit(options(opt))
+                    stop()
+                }
+                else {
+                    stop(stop_message)
+                }
+                
+            }
+            )        
+    return(finalResult)
 }
 ##------------------------------------------------------------------------------
 ## Parser model output summary and return in readable vector format
@@ -631,9 +622,9 @@ parserOutputSummary<-function(phenTestResult)
     genotype_estimate_SE <- NA
     genotype_p_value <- NA
     
-    gender_estimate <- NA
-    gender_estimate_SE <- NA
-    gender_p_value <- NA
+    sex_estimate <- NA
+    sex_estimate_SE <- NA
+    sex_p_value <- NA
     
     intercept_estimate <- NA
     intercept_estimate_SE <- NA
@@ -641,23 +632,23 @@ parserOutputSummary<-function(phenTestResult)
     weight_estimate_SE <- NA
     weight_p_value <- NA
     
-    gender_FvKO_estimate <- NA
-    gender_FvKO_SE <- NA
-    gender_FvKO_p_value <- NA
-    gender_MvKO_estimate <- NA
-    gender_MvKO_SE <- NA
-    gender_MvKO_p_value <- NA
+    sex_FvKO_estimate <- NA
+    sex_FvKO_SE <- NA
+    sex_FvKO_p_value <- NA
+    sex_MvKO_estimate <- NA
+    sex_MvKO_SE <- NA
+    sex_MvKO_p_value <- NA
     
     lengthoftable <- {
         table_length <- NA
         
         if (result$equation=="withWeight"){
-            if(result$numberGenders==2){
-                if((result$model.effect.gender
+            if(result$numberSexes==2){
+                if((result$model.effect.sex
                                 && result$model.effect.interaction)|
-                        (!result$model.effect.gender && result$model.effect.interaction)){
+                        (!result$model.effect.sex && result$model.effect.interaction)){
                     table_length <- 5
-                }else if(result$model.effect.gender &&
+                }else if(result$model.effect.sex &&
                         !result$model.effect.interaction){
                     table_length <- 4
                 }else {
@@ -669,12 +660,12 @@ parserOutputSummary<-function(phenTestResult)
         }
         ## Eq.1
         else{
-            if(result$numberGenders==2){
-                if((result$model.effect.gender
+            if(result$numberSexes==2){
+                if((result$model.effect.sex
                                 && result$model.effect.interaction)|
-                        (!result$model.effect.gender && result$model.effect.interaction)){
+                        (!result$model.effect.sex && result$model.effect.interaction)){
                     table_length <- 4
-                }else if(!result$model.effect.gender &&
+                }else if(!result$model.effect.sex &&
                         !result$model.effect.interaction){
                     table_length <- 2
                 }else{
@@ -694,18 +685,18 @@ parserOutputSummary<-function(phenTestResult)
                     ## for mixed model
                     intercept_estimate = modeloutput_summary[["tTable"]][[1]]
                     intercept_estimate_SE = modeloutput_summary[["tTable"]][[(1+lengthoftable)]]
-                    if((result$model.effect.gender && result$model.effect.interaction)
-                            |( !result$model.effect.gender&& result$model.effect.interaction)){
-                        gender_estimate=modeloutput_summary[["tTable"]][[2]]
-                        gender_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
-                        gender_p_value= modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
-                        gender_FvKO_estimate= modeloutput_summary[["tTable"]][[3]]
-                        gender_FvKO_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        gender_FvKO_p_value=modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
-                        gender_MvKO_estimate=modeloutput_summary[["tTable"]][[4]]
-                        gender_MvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                        gender_MvKO_p_value=modeloutput_summary[["tTable"]][[(4+4*lengthoftable)]]
-                    } else if( !result$model.effect.gender && !result$model.effect.interaction){
+                    if((result$model.effect.sex && result$model.effect.interaction)
+                            |( !result$model.effect.sex&& result$model.effect.interaction)){
+                        sex_estimate=modeloutput_summary[["tTable"]][[2]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
+                        sex_p_value= modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
+                        sex_FvKO_estimate= modeloutput_summary[["tTable"]][[3]]
+                        sex_FvKO_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                        sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
+                        sex_MvKO_estimate=modeloutput_summary[["tTable"]][[4]]
+                        sex_MvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
+                        sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(4+4*lengthoftable)]]
+                    } else if( !result$model.effect.sex && !result$model.effect.interaction){
                         genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                         genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                         genotype_p_value =  modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
@@ -714,9 +705,9 @@ parserOutputSummary<-function(phenTestResult)
                         genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                         genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                         genotype_p_value =  modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
-                        gender_estimate=modeloutput_summary[["tTable"]][[3]]
-                        gender_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        gender_p_value= modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
+                        sex_estimate=modeloutput_summary[["tTable"]][[3]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                        sex_p_value= modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
                     }
                     
                 }else{
@@ -725,21 +716,21 @@ parserOutputSummary<-function(phenTestResult)
                     intercept_estimate = modeloutput_summary[["tTable"]][[1]]
                     intercept_estimate_SE = modeloutput_summary[["tTable"]][[(1+lengthoftable)]]
                     
-                    if((result$model.effect.gender && result$model.effect.interaction)
-                            |( !result$model.effect.gender&& result$model.effect.interaction)){
+                    if((result$model.effect.sex && result$model.effect.interaction)
+                            |( !result$model.effect.sex&& result$model.effect.interaction)){
                         
-                        gender_estimate=modeloutput_summary[["tTable"]][[3]]
-                        gender_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        gender_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
-                        gender_FvKO_estimate= modeloutput_summary[["tTable"]][[3]]
-                        gender_FvKO_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        gender_FvKO_p_value=modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
-                        gender_MvKO_estimate=modeloutput_summary[["tTable"]][[4]]
-                        gender_MvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                        gender_MvKO_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
+                        sex_estimate=modeloutput_summary[["tTable"]][[3]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                        sex_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
+                        sex_FvKO_estimate= modeloutput_summary[["tTable"]][[3]]
+                        sex_FvKO_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                        sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
+                        sex_MvKO_estimate=modeloutput_summary[["tTable"]][[4]]
+                        sex_MvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
+                        sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
                         
                         
-                    } else if( !result$model.effect.gender && !result$model.effect.interaction){
+                    } else if( !result$model.effect.sex && !result$model.effect.interaction){
                         
                         genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                         genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
@@ -750,9 +741,9 @@ parserOutputSummary<-function(phenTestResult)
                         genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                         genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                         genotype_p_value =  modeloutput_summary[["tTable"]][[(2+3*lengthoftable)]]
-                        gender_estimate=modeloutput_summary[["tTable"]][[3]]
-                        gender_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        gender_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
+                        sex_estimate=modeloutput_summary[["tTable"]][[3]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                        sex_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
                     }
                     
                     
@@ -774,26 +765,26 @@ parserOutputSummary<-function(phenTestResult)
                         intercept_estimate = modeloutput_summary[["tTable"]][[1]]
                         intercept_estimate_SE = modeloutput_summary[["tTable"]][[(1+lengthoftable)]]
                         
-                        if((result$model.effect.weight && result$model.effect.gender &&
+                        if((result$model.effect.weight && result$model.effect.sex &&
                                         result$model.effect.interaction) |
                                 (result$model.effect.weight &&
-                                        !result$model.effect.gender &&
+                                        !result$model.effect.sex &&
                                         result$model.effect.interaction)){
-                            gender_estimate=modeloutput_summary[["tTable"]][[2]]
-                            gender_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
-                            gender_p_value= modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
-                            gender_FvKO_estimate= modeloutput_summary[["tTable"]][[4]]
-                            gender_FvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                            gender_FvKO_p_value=modeloutput_summary[["tTable"]][[(4+4*lengthoftable)]]
-                            gender_MvKO_estimate=modeloutput_summary[["tTable"]][[5]]
-                            gender_MvKO_SE=modeloutput_summary[["tTable"]][[(5+lengthoftable)]]
-                            gender_MvKO_p_value=modeloutput_summary[["tTable"]][[(5+4*lengthoftable)]]
+                            sex_estimate=modeloutput_summary[["tTable"]][[2]]
+                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
+                            sex_p_value= modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
+                            sex_FvKO_estimate= modeloutput_summary[["tTable"]][[4]]
+                            sex_FvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
+                            sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(4+4*lengthoftable)]]
+                            sex_MvKO_estimate=modeloutput_summary[["tTable"]][[5]]
+                            sex_MvKO_SE=modeloutput_summary[["tTable"]][[(5+lengthoftable)]]
+                            sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(5+4*lengthoftable)]]
                             weight_estimate=modeloutput_summary[["tTable"]][[3]]
                             weight_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
                             weight_p_value=modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
                             
                         } else if (result$model.effect.weight &&
-                                !result$model.effect.gender &&
+                                !result$model.effect.sex &&
                                 !result$model.effect.interaction){
                             
                             genotype_estimate = modeloutput_summary[["tTable"]][[2]]
@@ -804,15 +795,15 @@ parserOutputSummary<-function(phenTestResult)
                             weight_p_value=modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
                             
                         }else if (result$model.effect.weight &&
-                                result$model.effect.gender &&
+                                result$model.effect.sex &&
                                 !result$model.effect.interaction){
                             
                             genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                             genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                             genotype_p_value =  modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
-                            gender_estimate=modeloutput_summary[["tTable"]][[3]]
-                            gender_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                            gender_p_value= modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
+                            sex_estimate=modeloutput_summary[["tTable"]][[3]]
+                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                            sex_p_value= modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
                             weight_estimate=modeloutput_summary[["tTable"]][[4]]
                             weight_estimate_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
                             weight_p_value=modeloutput_summary[["tTable"]][[(4+4*lengthoftable)]]
@@ -826,41 +817,41 @@ parserOutputSummary<-function(phenTestResult)
                         intercept_estimate_SE = modeloutput_summary[["tTable"]][[(1+lengthoftable)]]
                         
                         if((result$model.effect.weight &&
-                                        result$model.effect.gender &&
+                                        result$model.effect.sex &&
                                         result$model.effect.interaction )|
                                 (result$model.effect.weight &&
-                                        !result$model.effect.gender &&
+                                        !result$model.effect.sex &&
                                         result$model.effect.interaction)){
-                            gender_estimate=modeloutput_summary[["tTable"]][[2]]
-                            gender_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
-                            gender_p_value= modeloutput_summary[["tTable"]][[(2+3*lengthoftable)]]
+                            sex_estimate=modeloutput_summary[["tTable"]][[2]]
+                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
+                            sex_p_value= modeloutput_summary[["tTable"]][[(2+3*lengthoftable)]]
                             weight_estimate=modeloutput_summary[["tTable"]][[3]]
                             weight_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
                             weight_p_value=modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
-                            gender_FvKO_estimate= modeloutput_summary[["tTable"]][[4]]
-                            gender_FvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                            gender_FvKO_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
-                            gender_MvKO_estimate=modeloutput_summary[["tTable"]][[5]]
-                            gender_MvKO_SE=modeloutput_summary[["tTable"]][[(5+lengthoftable)]]
-                            gender_MvKO_p_value=modeloutput_summary[["tTable"]][[(5+3*lengthoftable)]]
+                            sex_FvKO_estimate= modeloutput_summary[["tTable"]][[4]]
+                            sex_FvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
+                            sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
+                            sex_MvKO_estimate=modeloutput_summary[["tTable"]][[5]]
+                            sex_MvKO_SE=modeloutput_summary[["tTable"]][[(5+lengthoftable)]]
+                            sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(5+3*lengthoftable)]]
                             
                         } else if (result$model.effect.weight &&
-                                result$model.effect.gender &&
+                                result$model.effect.sex &&
                                 !result$model.effect.interaction){
                             
                             genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                             genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                             genotype_p_value =  modeloutput_summary[["tTable"]][[(2+3*lengthoftable)]]
-                            gender_estimate=modeloutput_summary[["tTable"]][[3]]
-                            gender_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                            gender_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
+                            sex_estimate=modeloutput_summary[["tTable"]][[3]]
+                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                            sex_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
                             weight_estimate=modeloutput_summary[["tTable"]][[4]]
                             weight_estimate_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
                             weight_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
                             
                             
                         }else if (result$model.effect.weight &&
-                                !result$model.effect.gender &&
+                                !result$model.effect.sex &&
                                 !result$model.effect.interaction){
                             genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                             genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
@@ -876,19 +867,19 @@ parserOutputSummary<-function(phenTestResult)
             }
             )
     output <- c(genotype_estimate, genotype_estimate_SE,  genotype_p_value,
-            gender_estimate, gender_estimate_SE,  gender_p_value, 
+            sex_estimate, sex_estimate_SE,  sex_p_value, 
             weight_estimate, weight_estimate_SE, weight_p_value, 
             intercept_estimate, intercept_estimate_SE, 
-            gender_FvKO_estimate, gender_FvKO_SE, gender_FvKO_p_value,  
-            gender_MvKO_estimate, gender_MvKO_SE, gender_MvKO_p_value)
+            sex_FvKO_estimate, sex_FvKO_SE, sex_FvKO_p_value,  
+            sex_MvKO_estimate, sex_MvKO_SE, sex_MvKO_p_value)
     
     names(output) <- c("genotype_estimate", "genotype_estimate_SE", 
             "genotype_p_value", 
-            "gender_estimate", "gender_estimate_SE", "gender_p_value", 
+            "sex_estimate", "sex_estimate_SE", "sex_p_value", 
             "weight_estimate", "weight_estimate_SE", "weight_p_value", 
             "intercept_estimate", "intercept_estimate_SE", 
-            "gender_FvKO_estimate", "gender_FvKO_SE", "gender_FvKO_p_value", 
-            "gender_MvKO_estimate", "gender_MvKO_SE", "gender_MvKO_p_value")
+            "sex_FvKO_estimate", "sex_FvKO_SE", "sex_FvKO_p_value", 
+            "sex_MvKO_estimate", "sex_MvKO_SE", "sex_MvKO_p_value")
     
     return(output)
 }

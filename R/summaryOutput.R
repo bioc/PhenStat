@@ -23,7 +23,8 @@ summaryOutput <- function(phenTestResult,phenotypeThreshold=0.01)
                     phenTestResult$depVariable,sep=""))
     
     message(paste("Method: ",switch(phenTestResult$method,
-                            MM = "Mixed Model framework",FE = "Fisher Exact Test framework"),"\n",sep=""))
+                            MM = "Mixed Model framework",FE = "Fisher Exact Test framework",
+                            RR = "Reference Ranges Plus framework"),"\n",sep=""))
     
     if (phenTestResult$method=="MM") {
         message(paste("Was batch significant?",phenTestResult$model.effect.batch))
@@ -52,7 +53,7 @@ summaryOutput <- function(phenTestResult,phenotypeThreshold=0.01)
         summary(phenTestResult$model.output)$tTable
     }
     
-    else if (phenTestResult$method=="FE"){
+    else if (phenTestResult$method %in% c("FE")){
         message("Model output:")
         
         message(paste("All data p-val: ",
@@ -73,8 +74,10 @@ summaryOutput <- function(phenTestResult,phenotypeThreshold=0.01)
                             phenTestResult$model.output$female$p.va,sep=""))
             
             message(paste("Females only effect size: ",
-                            phenTestResult$model.output$ES_female,"%",sep=""))            
+                            phenTestResult$model.output$ES_female,"%",sep=""))                     
         }
+        message(paste("Classification tag:", 
+                        classificationTag(phenTestResult)))
         
         ## Matrices and statistics
         message("\nMatrix 'all':")
@@ -115,18 +118,18 @@ generateGraphs <- function(phenTestResult, dir, graphingName=NULL, type="Xlib")
         
         
         #1
-        graph_name=file.path(dir, "boxplotGenderGenotype.png")
+        graph_name=file.path(dir, "boxplotSexGenotype.png")
         png(graph_name,type=type)
-        boxplotGenderGenotype(phenTestResult$model.dataset,
+        boxplotSexGenotype(phenTestResult$model.dataset,
                 phenTestResult$depVariable, graphingName=graphingName)
         
         dev.off()
         
         #2
         if (('Batch' %in% colnames(phenTestResult$model.dataset))){
-            graph_name=file.path(dir, "boxplotGenderGenotypeBatch.png")
+            graph_name=file.path(dir, "boxplotSexGenotypeBatch.png")
             png(graph_name,type=type)
-            boxplotGenderGenotypeBatch(phenTestResult$model.dataset,
+            boxplotSexGenotypeBatch(phenTestResult$model.dataset,
                     phenTestResult$depVariable, graphingName=graphingName)
             
             dev.off()
@@ -147,7 +150,7 @@ generateGraphs <- function(phenTestResult, dir, graphingName=NULL, type="Xlib")
         #4
         graph_name=file.path(dir, "qqplotGenotype.png")
         png(graph_name,type=type)
-        qqplotGenotype(phenTestResult)
+        qqplotGenotype(phenTestResult,outputMessages=FALSE)
         dev.off()
         
         #5
@@ -160,7 +163,7 @@ generateGraphs <- function(phenTestResult, dir, graphingName=NULL, type="Xlib")
                 && phenTestResult$model.effect.batch){
             graph_name=file.path(dir, "qqplotRandomEffects.png")
             png(graph_name,type=type)
-            qqplotRandomEffects(phenTestResult)
+            qqplotRandomEffects(phenTestResult,outputMessages=FALSE)
             
             dev.off()
         }    
@@ -169,7 +172,7 @@ generateGraphs <- function(phenTestResult, dir, graphingName=NULL, type="Xlib")
         if (('Batch' %in% colnames(phenTestResult$model.dataset))){
             graph_name=file.path(dir, "boxplotResidualBatch.png")
             png(graph_name,type=type)
-            boxplotResidualBatch(phenTestResult)
+            boxplotResidualBatch(phenTestResult,outputMessages=FALSE)
             
             dev.off()
         }    
@@ -179,7 +182,7 @@ generateGraphs <- function(phenTestResult, dir, graphingName=NULL, type="Xlib")
                 && phenTestResult$model.effect.batch){
             graph_name=file.path(dir, "qqplotRotatedResiduals.png")
             png(graph_name,type=type)
-            qqplotRotatedResiduals(phenTestResult)
+            qqplotRotatedResiduals(phenTestResult,outputMessages=FALSE)
             
             dev.off()
         }   
@@ -188,7 +191,7 @@ generateGraphs <- function(phenTestResult, dir, graphingName=NULL, type="Xlib")
     else {
         graph_name=file.path(dir, "categoricalBarPlot.png")
         png(graph_name,type=type)
-        categoricalBarplot(phenTestResult)
+        categoricalBarplot(phenTestResult,outputMessages=FALSE)
         
         dev.off()
     } 
