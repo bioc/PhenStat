@@ -19,7 +19,7 @@
 
 }    
 \usage{
-    testDataset(phenList, depVariable, 
+    testDataset(phenList=NULL, depVariable=NULL, 
             equation="withWeight", outputMessages=TRUE, 
             pThreshold=0.05, method="MM", callAll=TRUE, keepList=NULL, dataPointsThreshold=4)
 }
