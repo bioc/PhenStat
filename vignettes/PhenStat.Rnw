@@ -22,7 +22,8 @@
 
 PhenStat is a package that provides statistical methods for the identification 
 of abnormal phenotypes. 
-The package contains dataset checks and cleaning in preparation for the analysis. 
+The package contains dataset checks and cleaning in preparation for the 
+analysis. 
 For continuous data, an iterative fitting process is used to fit a regression 
 model that is the most appropriate 
 for the data, whilst for categorical data, a Fisher Exact Test is implemented. 
