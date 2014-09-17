@@ -7,17 +7,19 @@
     
     It creates start model and modify it after testing of different hypothesis (the model fixed effects).
     
+    The model random effects are: 
+    
+        -batch effect (TRUE if batch variation is significant, FALSE if not)
+    
     The model fixed effects are: 
     
-    -batch effect (TRUE if batch variation is significant, FALSE if not), 
+        -variance effect (TRUE if residual variances for genotype groups are homogeneous and FALSE if they are heterogeneous), 
     
-    -variance effect (TRUE if residual variances for genotype groups are homogeneous and FALSE if they are heterogeneous), 
+        -interaction effect (TRUE if genotype by sex interaction is significant), 
     
-    -interaction effect (TRUE if genotype by sex interaction is significant), 
+        -sex effect (TRUE if sex is significant), 
     
-    -sex effect (TRUE if sex is significant), 
-    
-    -weight effect (TRUE if weight is significant).
+        -weight effect (TRUE if weight is significant).
     
     If user would like to assign other TRUE/FALSE values to the fixed effects of the model 
     then he or she has to define keepList argument which is vector of TRUE/FALSE values.
@@ -37,9 +39,12 @@
 \arguments{
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}       
     \item{depVariable}{a character string defining the dependent variable of interest; mandatory argument}
-    \item{equation}{a character string defining the equation to use. Possible values "withWeight" (default),"withoutWeight"}
-    \item{outputMessages}{flag: "FALSE" value to suppress output messages; "TRUE" value to show output messages; default value TRUE}        
-    \item{pThreshold}{a numerical value for the p-value threshold to use in tests, default value 0.05}    
+    \item{equation}{a character string defining the equation to use. 
+        Possible values "withWeight" (default),"withoutWeight"}
+    \item{outputMessages}{flag: "FALSE" value to suppress output messages; "TRUE" value to show output messages
+        ; default value TRUE}        
+    \item{pThreshold}{a numerical value for the p-value threshold used to determine which fixed effects to keep 
+        in the model, default value 0.05}    
     \item{keepList}{a logical vector defining the significance of different model effects: keep_batch, keep_equalvar,
         keep_weight, keep_sex, keep_interaction; default value NULL}
 }

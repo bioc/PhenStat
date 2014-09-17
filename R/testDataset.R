@@ -1,4 +1,4 @@
-## Copyright � 2011-2013 EMBL - European Bioinformatics Institute
+## Copyright © 2012-2014 EMBL - European Bioinformatics Institute
 ## 
 ## Licensed under the Apache License, Version 2.0 (the "License"); 
 ## you may not use this file except in compliance with the License.  
@@ -27,9 +27,10 @@
 ## count matrix (matrices) and perform test(s).  
 ##------------------------------------------------------------------------------
 testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight", 
-        outputMessages=TRUE, pThreshold=0.05, method="MM", callAll=TRUE, keepList=NULL, dataPointsThreshold=4)
+        outputMessages=TRUE, pThreshold=0.05, method="MM", callAll=TRUE, 
+        keepList=NULL, dataPointsThreshold=4, RR_naturalVariation=95, RR_controlPointsThreshold=60)
 {
-    
+
     stop_message <- ""
     
     ## CHECK ARGUMENTS   
@@ -47,7 +48,7 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
     
     # 3
     if (!(equation %in% c("withWeight","withoutWeight")) && method=="MM")
-    stop_message <- paste(stop_message,"Error:\nPlease define equation you ", 
+        stop_message <- paste(stop_message,"Error:\nPlease define equation you ", 
             "would like to use from the following options: 'withWeight', 'withoutWeight'.\n",sep="")
     
     # 4  Checks for rovided significance values
@@ -64,10 +65,12 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
     }
     
     # 5
-    if (!(method %in% c("MM","FE"))){
+    if (!(method %in% c("MM","FE","RR","TF"))){
         stop_message <- paste(stop_message,"Error:\nMethod define in the 'method' argument '",
                 method,"' is not supported.\nAt the moment we are supporting 'MM' ", 
-                "value for Mixed Model framework and 'FE' value for Fisher Exact Test framework.\n",sep="")
+                "value for Mixed Model framework, 'FE' value for Fisher Exact Test framework",
+                "'RR' for Reference Ranges Plus framework and 'TF' value for Time as Fixed Effect framework.\n",
+                sep="")
         
     }   
     
@@ -78,9 +81,45 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
         message("Warning:\nData points threshold is set to 2 (minimal value).\n")
     }
     
+    # RR_naturalVariation=95, RR_controlPointsThreshold=60
+    if (RR_naturalVariation<60) {
+        RR_naturalVariation <- 60
+        if (outputMessages)
+        message("Warning:\nNatural variation threshold is set to 60 (minimal value).\n")
+    }
+    
+    if (RR_controlPointsThreshold<40) {
+        RR_controlPointsThreshold <- 40
+        if (outputMessages)
+        message("Warning:\nControl points threshold is set to 40 (minimal value).\n")
+    }
+    
     # 7 
     if (nchar(stop_message)==0) {
+        phenList$dataset$Gender=levels(phenList$dataset$Gender)
         x <- phenList$dataset 
+        
+        ## NUMERIC ISSUE ???????????????????????????
+        columnOfInterest <- x[,c(depVariable)]
+
+        if (class(columnOfInterest)=="factor"){
+            columnOfInterest <- as.character(columnOfInterest)
+            tryCatch({
+                        # try to convert into numbers
+                        columnOfInterest<-as.numeric(columnOfInterest)
+                    },
+                    warning = function(war){
+                        # convert into characters
+                        columnOfInterest <- as.character(columnOfInterest)
+                    },
+                    error = function(err){
+                        # convert into characters
+                        columnOfInterest <- as.character(columnOfInterest)        
+                    })
+            phenList$dataset[,c(depVariable)] <- columnOfInterest
+            x[,c(depVariable)] <- columnOfInterest
+        }
+        
         checkDepV <- columnChecks(x,depVariable,dataPointsThreshold)
         
         # Presence
@@ -89,8 +128,10 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
                 depVariable,"' is missed in the dataset.\n",sep="")
     }
     
-    
     ## STOP CHECK ARGUMENTS   
+    
+   
+    
     
     ## DATASET'S CHECKS   
     # Dataset checks depending on selected method
@@ -101,8 +142,8 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
 
         checkWeight <- columnChecks(x,"Weight",dataPointsThreshold)
         # MM checks
-        # Should go first since there are switches between MM to FE
-        if (method=="MM"){
+        # Go first since there are switches between MM to FE
+        if (method %in% c("MM","TF")){
 
             # Numeric
             if (!checkDepV[2]) {
@@ -128,13 +169,13 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
                 else  if (variability<0.005){ 
                     stop_message <- paste(stop_message,"Error:\nInsufficient variability in dependent variable '",
                             depVariable,
-                            "' for MM framework. Fisher Exact Test can be better way to do the analysis.\n",sep="") 
+                            "' for MM/TF framework. Fisher Exact Test can be better way to do the analysis.\n",sep="") 
                 } 
                 # Data points - number of data points in the depVariable column for genotype/sex combinations
                 else if (!checkDepV[3])
                 stop_message <- paste(stop_message,"Error:\nNot enough data points in dependent variable '",
                         depVariable,
-                        "' for genotype/sex combinations to allow the application of Mixed Model. ",
+                        "' for genotype/sex combinations to allow the application of MM/TF framework. ",
                         "Threshold used: ",dataPointsThreshold,".\n",sep="")     
                 
                 #Weight checks
@@ -185,6 +226,34 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
             }            
         }
         
+        # TF checks
+        if (method=="TF" && nchar(stop_message)==0){
+            # Lists possible combinations
+            Genotype_levels <- levels(factor(x$Genotype))
+            Batch_levels <- levels(factor(x$Batch))
+            if (length(Batch_levels)<2 || length(Batch_levels)>5){
+                stop_message <- paste(stop_message,"Error:\n'TF' framework requires from 2 to 5 batch levels. ",
+                        "There is/are '",
+                        length(Batch_levels),"' batch level(s) in the dataset.\n",sep="") 
+            }
+            TFDataPoints <- TRUE
+            for (i in 1:length(Batch_levels)){
+                BatchSubset <- subset(x, x$Batch==Batch_levels[i])
+                for (j in 1:length(Genotype_levels)){           
+                    GenotypeBatchSubset <- subset(BatchSubset, 
+                            BatchSubset$Genotype==Genotype_levels[j]) 
+                    columnOfInterestSubset <- na.omit(GenotypeBatchSubset[,c(depVariable)])                    
+                    if (length(columnOfInterestSubset)==0){
+                         TFDataPoints <- FALSE
+                    }
+                }   
+   
+            }
+            if (!TFDataPoints)
+                stop_message <- paste(stop_message,"Error:\n'TF' framework requires data points for at least one sex ",
+                    "in all genotype/batch level combinations.\n",sep="") 
+        }
+        
         # FE checks
         if (method=="FE"){
             if (checkDepVLevels[2]==0)
@@ -195,6 +264,57 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
             stop_message <- paste("Error:\nPackage supports up to 10 levels ",
                     "in dependent variable in FE framework. ", 
                     "The variable '",depVariable,"' has more than 10 levels.\n",sep="") 
+        } 
+        
+        # RR checks
+        if (method=="RR"){
+            # Numeric
+            if (!checkDepV[2]) {
+                method <- "FE"
+                if (outputMessages)
+                message(paste("Warning:\nDependent variable '",depVariable,
+                                "' is not numeric. Fisher Exact Test will be used for the ", 
+                                "analysis of this dependent variable.\n",sep=""))
+            }
+            else{
+            
+                if (checkDepVLevels[2]==0)
+                    stop_message <- paste("Error:\nInsufficient data in the dependent variable '",
+                        depVariable,
+                        "' to allow the application of RR plus framework.\n",sep="") 
+                # Number of control data
+                
+                
+                controlSubset <- subset(x, x$Genotype==phenList$refGenotype)
+                columnOfInterestSubset <- na.omit(controlSubset[,c(depVariable)])
+                
+                Sex_levels <- levels(factor(x$Sex))
+                
+                controlNotEnough <- FALSE
+                errorText <- ""
+                
+                for (j in 1:length(Sex_levels)){           
+                    GenotypeSexSubset <- subset(controlSubset, 
+                            controlSubset$Sex==Sex_levels[j]) 
+                        
+                    columnOfInterestSubset <- na.omit(GenotypeSexSubset[,c(depVariable)])
+                    
+                    errorText <- paste(errorText, Sex_levels[j], " - ", length(columnOfInterestSubset),", ",sep="") 
+                    
+                    if (length(columnOfInterestSubset)<RR_controlPointsThreshold) {
+                        controlNotEnough <- TRUE
+                    }
+                }                
+                errorText <- substr(errorText, 1, nchar(errorText)-2) 
+                
+                
+                if (controlNotEnough) 
+                    stop_message <- paste("Error:\nInsufficient data in the dependent variable '",
+                        depVariable,
+                        "' control subset (",errorText,
+                                ") to allow the application of RR plus framework.",
+                        "\nThe threshold is ",RR_controlPointsThreshold," datapoints. \n",sep="") 
+            }
         } 
         
     }    
@@ -243,11 +363,37 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
         }
         
     }
+    else if (method=="TF") {
+        if (callAll){
+            if (outputMessages)
+            message(paste("Information:\nPerform all TF framework stages: startTFModel and finalTFModel.\n",sep=""))
+        }    
+        
+        
+        
+        if (outputMessages)
+        message(paste("Information:\nMethod: Time as Fixed Effect framework.\n",sep="")) 
+        
+        result <- startTFModel(phenList, depVariable, equation, 
+                outputMessages, pThreshold, keepList)
+        
+        ## Perform all framework methods 
+        if (callAll && is(result,"PhenTestResult")){
+            result <- finalTFModel(result, outputMessages)
+        }
+    }
     else if (method=="FE") {
         ## Fisher Exact Test 
         if (outputMessages)
         message(paste("Information:\nMethod: Fisher Exact Test framework.\n",sep="")) 
         result <- FisherExactTest(phenList,depVariable,outputMessages)
+    }
+    
+    else if (method=="RR"){
+        ## RR Plus
+        if (outputMessages)
+        message(paste("Information:\nMethod: Reference Ranges Plus framework.\n",sep="")) 
+        result <- RRTest(phenList,depVariable,outputMessages,RR_naturalVariation,RR_controlPointsThreshold)
     }
     
     return(result)   
@@ -258,7 +404,7 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
 columnLevels <- function(dataset, columnName){
     
     columnOfInterest <- na.omit(dataset[,c(columnName)])
-    # Test if there are data points in a column other than NA
+
     values<- c(length(columnOfInterest))
     
     #Test for the data points quantity for Genotype/sex combinations
@@ -298,7 +444,7 @@ columnChecks <- function(dataset, columnName, dataPointsThreshold=4){
     }    
     else {
         columnOfInterest <- na.omit(dataset[,c(columnName)])
-        
+
         if(all(sapply(columnOfInterest,is.numeric))){
             numeric <- TRUE
         }
@@ -306,7 +452,7 @@ columnChecks <- function(dataset, columnName, dataPointsThreshold=4){
         dataPointsSummary <- columnLevels(dataset,columnName)
         
         NoCombinations <- dataPointsSummary[3]
-        
+        #message(dataPointsSummary[3])
         variabilityThreshold <- NoCombinations
         #if (NoCombinations==4)
         #variabilityThreshold <- 3 
@@ -324,4 +470,171 @@ columnChecks <- function(dataset, columnName, dataPointsThreshold=4){
     return (values)
 }
 
+##------------------------------------------------------------------------------
+decisionTree <- function(phenList=NULL, depVariable=NULL, 
+        outputMessages=TRUE)
+{
+    
+# evaluate    dataPointsThreshold, RR_controlPointsThreshold
+    stop_message <- ""
+    dataPointsThreshold <- 4
+    RR_controlPointsThreshold <- 40
+    suggestedFramework <- "NO"
+    
+    ## CHECK ARGUMENTS   
+    
+    # 1
+    if (is.null(phenList) || !is(phenList,"PhenList")){
+        stop_message <- paste(stop_message,"Error:\nPlease create and specify PhenList object.\n",sep="")
+    }
+    
+    # 2
+    if (is.null(depVariable)){
+        stop_message <- paste(stop_message,"Error:\nPlease specify dependent variable, ",
+                "for example: depVariable='Lean.Mass'.\n",sep="")
+    } 
+    else {
+        columnOfInterest <- phenList$dataset[,c(depVariable)]
+    }
+    
+    # stop if there is something wrong with the arguments
+    if (nchar(stop_message)==0) {
+        x <- phenList$dataset 
+        checkDepV <- columnChecks(x,depVariable,dataPointsThreshold)
+        
+        # Presence
+        if (!checkDepV[1])
+        stop_message <- paste("Error:\nDependent variable column '",
+                depVariable,"' is missed in the dataset.\n",sep="")
+    }
+    
+    
+    # If problems are deteckted
+    if (nchar(stop_message)>0){
+        if (outputMessages)  { 
+            message(stop_message)
+            opt <- options(show.error.messages=FALSE)
+            on.exit(options(opt))      
+            stop()
+        }
+        else {
+            stop(stop_message)
+        }
+    }
+    
+    
+    ## STOP CHECK ARGUMENTS     
+    
+
+                
+        checkDepVLevels <- columnLevels(x,depVariable) 
+        
+
+
+        # check for FE        
+        if (checkDepVLevels[2]>0 && checkDepVLevels[2]<=10) {
+            suggestedFramework <- "FE"
+        }
+        
+        if (checkDepV[2]) { # NUMERIC
+        
+            # VARIABILITY
+            variabilityPass <- TRUE
+        
+            # Variability - the ratio of different values to all values in the column
+            if (checkDepVLevels[1]>0)
+                variability <- checkDepVLevels[2]/checkDepVLevels[1] 
+            else 
+                variability <- 0
+            # where checkDepVLevels[2] contains number of levels and checkDepVLevels[1] contains number of data points
+            # One level only
+            if (checkDepVLevels[2]==1 || checkDepVLevels[2]==0){ 
+                variabilityPass <- FALSE
+            } 
+            else  
+                if (variability<0.005){ 
+                    variabilityPass <- FALSE
+                } 
+                # Data points - number of data points in the depVariable column for genotype/sex combinations
+                else if (!checkDepV[3])
+                    variabilityPass <- FALSE
+            # VARIABILITY
+         
+         
+            # check for TF
+            if ('Batch' %in% colnames(x) && variabilityPass){
+                phenListTF <- TFDataset(phenList,depVariable,outputMessages=FALSE,forDecisionTree=outputMessages)
+                xTF <- phenListTF$dataset            
+                
+                # check for batches - shoud be from 2 to 5 batches
+                if (length(levels(factor(xTF$Batch))) >= 2 && length(levels(factor(xTF$Batch))) <= 5) {   
+                    TF <- TRUE 
+                    Genotype_levels <- levels(factor(x$Genotype))
+                    Batch_levels <- levels(factor(x$Batch))
+                    # check for data points in all genotype/batch level combinations (records at least in on Sex)
+                    for (i in 1:length(Batch_levels)){
+                        BatchSubset <- subset(x, x$Batch==Batch_levels[i])
+                        # Genotype loop
+                        for (j in 1:length(Genotype_levels)){           
+                            GenotypeBatchSubset <- subset(BatchSubset, 
+                                    BatchSubset$Genotype==Genotype_levels[j]) 
+                            columnOfInterestSubset <- na.omit(GenotypeBatchSubset[,c(depVariable)])
+                            if (length(columnOfInterestSubset)==0){
+                                TF <- FALSE
+                            }
+                        }                        
+                    }
+                    if (suggestedFramework=="NO"){
+                        suggestedFramework <- "TF"
+                    }
+                    else {
+                        suggestedFramework <- paste(suggestedFramework,", TF",sep="") 
+                    }
+                }
+                
+            }
+            
+            # check for MM
+            if (variabilityPass) {     
+                if (suggestedFramework=="NO"){
+                    suggestedFramework <- "MM"
+                }
+                else {
+                    suggestedFramework <- paste(suggestedFramework,", MM",sep="") 
+                }                
+            }
+                
+            # checks for RR
+            controlNotEnough <- FALSE
+            if (checkDepVLevels[2]!=0) {               
+                controlSubset <- subset(x, x$Genotype==phenList$refGenotype)
+                columnOfInterestSubset <- na.omit(controlSubset[,c(depVariable)])                   
+                Sex_levels <- levels(factor(x$Sex))                                  
+                for (j in 1:length(Sex_levels)){           
+                    GenotypeSexSubset <- subset(controlSubset, 
+                    controlSubset$Sex==Sex_levels[j])                        
+                    columnOfInterestSubset <- na.omit(GenotypeSexSubset[,c(depVariable)])                       
+                    if (length(columnOfInterestSubset)<RR_controlPointsThreshold) {
+                        controlNotEnough <- TRUE
+                    }
+                }  
+            } 
+            else {
+                controlNotEnough <- TRUE
+            }   
+                   
+            if (!controlNotEnough) { 
+                if (suggestedFramework=="NO"){
+                    suggestedFramework <- "RR"
+                }
+                else {
+                    suggestedFramework <- paste(suggestedFramework," and RR",sep="") 
+                }
+            } 
+          
+            }
+        
+        return(suggestedFramework)   
+       
+}
 ##------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-## Copyright © 2011-2013 EMBL - European Bioinformatics Institute
+## Copyright © 2012-2014 EMBL - European Bioinformatics Institute
 ## 
 ## Licensed under the Apache License, Version 2.0 (the "License"); 
 ## you may not use this file except in compliance with the License.  
@@ -158,14 +158,14 @@ boxplotResidualBatch<-function(phenTestResult,outputMessages=TRUE){
     if(is(phenTestResult,"PhenTestResult")) {
         x <- phenTestResult$model.dataset
         modeloutput <- phenTestResult$model.output
+       
+        if (!('Batch' %in% colnames(x))){
+            stop_message <- paste(stop_message,
+                    "Error:\nBatch column is missed in the dataset.\n",sep="")
+        }
     }
     else{
         stop_message <- "Error:\nPlease create a PhenTestResult object first.\n"
-    }
-    
-    if (!('Batch' %in% colnames(x))){
-        stop_message <- paste(stop_message,
-                "Error:\nBatch column is missed in the dataset.\n",sep="")
     }
     
     if (nchar(stop_message)>0){
@@ -269,14 +269,15 @@ categoricalBarplot<-function(phenTestResult,outputMessages=TRUE){
     if(is(phenTestResult,"PhenTestResult")) {
         x <- phenTestResult$model.dataset
         modeloutput <- phenTestResult$model.output
+        
+        if (!phenTestResult$method %in% c("FE","RR"))
+            stop_message <- paste(stop_message,"Error:\nCategorical bar plot can be created only within ", 
+                "Fisher Exact Test or RR plus framework.\n",sep="")
     }
     else{
         stop_message <- "Error:\nPlease create a PhenTestResult object first.\n"
     }
     
-    if (!phenTestResult$method=="FE")
-        stop_message <- paste(stop_message,"Error:\nCategorical bar plot can be created only within ", 
-            "Fisher Exact Test framework.\n",sep="")
     
     if (nchar(stop_message)>0){
         if (outputMessages){

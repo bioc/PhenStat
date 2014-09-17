@@ -9,7 +9,7 @@
 ###############################################################################
 # basic checks
 test_columnChecks <- function() {    
-    data_categorical <- read.csv("PhenStat/inst/extdata/test_categorical.csv")
+    data_categorical=read.csv("PhenStat/inst/extdata/test_categorical.csv")
     test <- PhenList(dataset=data_categorical,testGenotype="Aff3/Aff3")
     output <- columnChecks(test$dataset, "Weight", 4) 
     output2 <- columnChecks(test$dataset, "Number.Of.Digits", 8) 
@@ -35,7 +35,7 @@ test_PhenList <- function() {
 ###############################################################################
 # PhenList with one sex
 test_oneSex <- function(){
-    data_oneSex <- read.csv("PhenStat/inst/extdata/test1_1sex.csv")
+    data_oneSex=read.csv("PhenStat/inst/extdata/test1_1sex.csv")
     test <- PhenList(dataset=data_oneSex,testGenotype="Mysm1/+")
     checkEquals(length(levels(test$dataset$Sex)),1,paste("length of sex levels is not equals to 1",
                     " - it realises there is only one gender",sep=""))
@@ -44,7 +44,7 @@ test_oneSex <- function(){
 ###############################################################################
 # Fisher Exact Test generates appropriate classificationTag output
 test_FEOutput <- function(){
-    data_categorical <- read.csv("PhenStat/inst/extdata/test_categorical.csv")
+    data_categorical=read.csv("PhenStat/inst/extdata/test_categorical.csv")
     test <- PhenList(dataset=data_categorical,testGenotype="Aff3/Aff3")
     result <- testDataset(test,depVariable="Skull.Shape",method="FE")
     checkEquals(length(classificationTag(result)),1, "length of classificationTag output is not 1")
@@ -78,7 +78,7 @@ test_testDataset <- function(){
 # vectorOutput
 test_vectorOutput <- function(){
     #file <- system.file("extdata", "test4.csv", package="PhenStat")
-    data_typical <- read.csv("PhenStat/inst/extdata/test4.csv")
+    data_typical=read.csv("PhenStat/inst/extdata/test4.csv")
     test <- PhenList(dataset=data_typical,testGenotype="Mysm1/+", dataset.clean=TRUE)
     result <- testDataset(test,depVariable="Lean.Mass")
     vector_results <- vectorOutput(result)   

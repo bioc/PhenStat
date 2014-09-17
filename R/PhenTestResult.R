@@ -1,4 +1,4 @@
-## Copyright © 2011-2013 EMBL - European Bioinformatics Institute
+## Copyright © 2012-2014 EMBL - European Bioinformatics Institute
 ## 
 ## Licensed under the Apache License, Version 2.0 (the "License"); 
 ## you may not use this file except in compliance with the License.  
@@ -31,7 +31,9 @@ PhenTestResult <- function(model.output=NULL,
         model.formula.genotype=NULL, 
         model.output.genotype.nulltest.pVal=NULL, 
         model.output.quality=NULL,
-        model.output.summary=NULL) 
+        model.output.summary=NULL,
+        model.output.averageRefGenotype=NULL,
+        model.output.percentageChanges=NULL) 
 
 ## Construct PhenTestResult object from components
 
@@ -53,6 +55,8 @@ PhenTestResult <- function(model.output=NULL,
     x$model.output.quality <- model.output.quality
     x$model.output.summary <- model.output.summary
     x$model.output.interaction <- model.output.interaction
+    x$model.output.averageRefGenotype <- model.output.averageRefGenotype
+    x$model.output.percentageChanges <- model.output.percentageChanges
     x
 }
 ##------------------------------------------------------------------------------

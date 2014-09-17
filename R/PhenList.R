@@ -1,4 +1,4 @@
-## Copyright © 2011-2013 EMBL - European Bioinformatics Institute
+## Copyright © 2012-2014 EMBL - European Bioinformatics Institute
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -29,8 +29,9 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
     ## Rename columns if needed
     if (dataset.clean){
         
+      
         if(!is.null(dataset.colname.batch))
-        colnames(dataset)[colnames(dataset) == dataset.colname.batch] <-'Batch'
+            colnames(dataset)[colnames(dataset) == dataset.colname.batch] <-'Batch'
         else {
             if ('Assay.Date' %in% colnames(dataset)){
                 colnames(dataset)[colnames(dataset) == 'Assay.Date'] <-'Batch'
@@ -39,19 +40,27 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
                         "renamed to 'Batch' and will be used for the batch effect modelling.\n",sep=""))
             }
             else
-            if (length(colnames(dataset)[grep("batch",
-                                            tolower(colnames(dataset)))])>0 && outputMessages){
-                batch_potential_columns<-paste(colnames(dataset)[grep
-                                ("batch", tolower(colnames(dataset)))], collapse="', '" )
-                
-                message(paste("Warning:\nDataset contains columns that might ",
-                                "be used for Batch effect modeling, for instance '",
-                                batch_potential_columns,"'.\n",sep=""))
-            }
+                if ('AssayDate' %in% colnames(dataset)){
+                    colnames(dataset)[colnames(dataset) == 'AssayDate'] <-'Batch'
+                    if (outputMessages)
+                    message(paste("Warning:\nDataset's column 'AssayDate' has been ",
+                                    "renamed to 'Batch' and will be used for the batch effect modelling.\n",sep=""))
+                }
+                else 
+                if (length(colnames(dataset)[grep("batch",
+                                                tolower(colnames(dataset)))])>0 && outputMessages){
+                    batch_potential_columns<-paste(colnames(dataset)[grep
+                                    ("batch", tolower(colnames(dataset)))], collapse="', '" )
+                    
+                    message(paste("Warning:\nDataset contains columns that might ",
+                                    "be used for Batch effect modeling, for instance '",
+                                    batch_potential_columns,"'.\n",sep=""))
+                }
             
         }
-        if(!is.null(dataset.colname.genotype))
-        colnames(dataset)[colnames(dataset) == dataset.colname.genotype] <-'Genotype'
+        if(!is.null(dataset.colname.genotype)){
+            colnames(dataset)[colnames(dataset) == dataset.colname.genotype] <-'Genotype'
+        }
         if(!is.null(dataset.colname.sex)) {
             colnames(dataset)[colnames(dataset) == dataset.colname.sex] <-'Sex'
         }
@@ -87,32 +96,6 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
         #}
         }
         
-
-        checkWeight <- columnChecks(dataset,"Weight",4) 
-
-        if (! checkWeight[1]){
-            if (outputMessages)
-            message("Warning:\nWeight column is not present in the database.\n")
-        }    
-        else {        
-                if (! checkWeight[2]){
-                    if (outputMessages)
-                        message(paste("Warning:\nWeight column values are not numeric.\n", 
-                                    "In order to avoid erroneous execution of statistical ",
-                                    "functions column is renamed to 'Weight_labels'.\n",sep=""))
-                    colnames(dataset)[colnames(dataset) == 'Weight'] <-'Weight_labels'      
-                }    
-                if (! checkWeight[3]){
-                    if (outputMessages)
-                        message(paste("Warning:\nWeight column does not have enough data points ",
-                                    "for genotype/sex combinations.\n", 
-                                    "In order to avoid erroneous execution of statistical ",
-                                    "functions column is renamed to 'Weight_labels'.\n",sep=""))    
-                    colnames(dataset)[colnames(dataset) == 'Weight'] <-'Weight_labels'      
-                }  
-       }         
-
-            
        
         
 #        if ('Weight' %in% colnames(dataset)){
@@ -137,14 +120,17 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
         if ('Batch' %in% colnames(dataset))
         dataset$Batch<-factor(dataset$Batch)
 
-        
-        # # Replace values for sexes with 'Male','Female' if needed
+            
+        # # Replace values for sexes with 'Male','Female'
+        levels(dataset$Sex)[levels(dataset$Sex)=="female"] <- "Female"
+        levels(dataset$Sex)[levels(dataset$Sex)=="male"] <- "Male"
+            
         if(!is.null(dataset.values.female))
         levels(dataset$Sex)[levels(dataset$Sex)==dataset.values.female] <- "Female"
   
         if(!is.null(dataset.values.male)) 
         levels(dataset$Sex)[levels(dataset$Sex)==dataset.values.male] <- "Male"
-        
+            
         ## Hemi to test genotype replacement
         if (!is.null(hemiGenotype)) {
             if (length(rownames(dataset[dataset$Genotype==hemiGenotype,]))>0) {
@@ -187,6 +173,31 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
     dataset$Genotype<-factor(dataset$Genotype)
     if ('Batch' %in% colnames(dataset))
     dataset$Batch<-factor(dataset$Batch)
+        
+            
+        checkWeight <- columnChecks(dataset,"Weight",2) 
+        
+        if (! checkWeight[1]){
+            if (outputMessages)
+            message("Warning:\nWeight column is not present in the database.\n")
+        }    
+        else {        
+            if (! checkWeight[2]){
+                if (outputMessages)
+                message(paste("Warning:\nWeight column values are not numeric.\n", 
+                                "In order to avoid erroneous execution of statistical ",
+                                "functions column is renamed to 'Weight_labels'.\n",sep=""))
+                colnames(dataset)[colnames(dataset) == 'Weight'] <-'Weight_labels'      
+            }    
+            if (! checkWeight[3]){
+                if (outputMessages)
+                message(paste("Warning:\nWeight column does not have enough data points ",
+                                "for genotype/sex combinations.\n", 
+                                "In order to avoid erroneous execution of statistical ",
+                                "functions column is renamed to 'Weight_labels'.\n",sep=""))    
+                colnames(dataset)[colnames(dataset) == 'Weight'] <-'Weight_labels'      
+            }  
+        }     
 
     ## CHECKS
     dataset <- checkDataset(dataset, testGenotype, refGenotype, 
@@ -195,6 +206,8 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
     
     Genotype_levels <- levels(dataset$Genotype)
     Sex_levels <- levels(dataset$Sex)
+        
+
     
     ## Calculate statistics
     dataset.stat <- data.frame(
@@ -205,13 +218,13 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
             Levels = sapply(dataset, function(x) length(unique(x)) ),
             NObs = sapply(dataset, function(x) length(na.omit(x))),
             Mean = sapply(dataset, function(x) 
-                    if(is.numeric(x)) round(mean(na.omit(x)),digits=2) else NA),
+                    if(is.numeric(x) && (length(unique(x))/length(x)>0.05)) round(mean(na.omit(x)),digits=2) else NA),
             StdDev = sapply(dataset, function(x) 
-                    if(is.numeric(x)) round(sd(na.omit(x)),digits=2) else NA),
+                    if(is.numeric(x) && (length(unique(x))/length(x)>0.05)) round(sd(na.omit(x)),digits=2) else NA),
             Minimum = sapply(dataset, function(x) 
-                    if(is.numeric(x)) round(min(na.omit(x)),digits=2) else NA),
+                    if(is.numeric(x) && (length(unique(x))/length(x)>0.05)) round(min(na.omit(x)),digits=2) else NA),
             Maximum = sapply(dataset, function(x) 
-                    if(is.numeric(x)) round(max(na.omit(x)),digits=2) else NA))
+                    if(is.numeric(x) && (length(unique(x))/length(x)>0.05)) round(max(na.omit(x)),digits=2) else NA))
     
     rownames(dataset.stat) <- NULL
     

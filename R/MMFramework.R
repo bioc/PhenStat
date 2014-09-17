@@ -1,4 +1,4 @@
-## Copyright © 2011-2013 EMBL - European Bioinformatics Institute
+## Copyright © 2012-2014 EMBL - European Bioinformatics Institute
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -71,6 +71,20 @@ startModel <- function(phenList, depVariable, equation="withWeight",
     }
     
     numberofsexes <- length(levels(x$Sex))
+    # Averages for percentage changes - is the ratio of the genotype effect for a sex relative to 
+    # the wildtype signal for that variable for that sex - calculation        
+    WT <- subset(x,x$Genotype==phenList$refGenotype)
+    mean_all <- mean(WT[,c(depVariable)],na.rm=TRUE)  
+    mean_list <- c(mean_all)  
+    if (numberofsexes==2){  
+        WT_f <- subset(WT,WT$Sex=="Female")
+        WT_m <- subset(WT,WT$Sex=="Male")
+        mean_f <- mean(WT_f[,c(depVariable)],na.rm=TRUE)
+        mean_m <- mean(WT_m[,c(depVariable)],na.rm=TRUE)
+        mean_list <- c(mean_all,mean_f,mean_m)  
+    }
+    # end of percentage change calculations    
+    
     
     
     ## Start model formula: homogenous residual variance,
@@ -299,7 +313,8 @@ startModel <- function(phenList, depVariable, equation="withWeight",
                                 model.effect.weight=keep_weight,
                                 numberSexes=numberofsexes,
                                 pThreshold=pThreshold,
-                                model.formula.genotype=model.formula))
+                                model.formula.genotype=model.formula,
+                                model.output.averageRefGenotype=mean_list))
             },
             #END OF tryCatch    
             error=function(error_mes) {
@@ -582,8 +597,90 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
                 
                 ## Parse modeloutput and choose output depending on model
                 result$model.output.summary <- parserOutputSummary(result)
-                
-                finalResult <- result
+
+                # Percentage changes - is the ratio of the genotype effect for a sex relative to 
+                # the wildtype signal for that variable for that sex - calculation     
+
+                if(result$numberSexes==2){
+                   # without weight
+                   if (is.na(result$model.output.summary['weight_estimate'])){ 
+                        if (!is.na(result$model.output.summary['sex_estimate']) &&
+                            !is.na(result$model.output.summary['sex_FvKO_estimate']))
+                        {
+                            denominator_f <- result$model.output.summary['intercept_estimate']
+                            denominator_m <- result$model.output.summary['intercept_estimate']+
+                            result$model.output.summary['sex_estimate']
+                            ratio_f <- result$model.output.summary['sex_FvKO_estimate']/denominator_f                       
+                            ratio_m <- result$model.output.summary['sex_MvKO_estimate']/denominator_m
+                        }
+                        else if (!is.na(result$model.output.summary['sex_FvKO_estimate']))
+                        {
+                                denominator <- result$model.output.summary['intercept_estimate']
+                                ratio_f <- result$model.output.summary['sex_FvKO_estimate']/denominator                            
+                                ratio_m <- result$model.output.summary['sex_MvKO_estimate']/denominator            
+                        }
+                        else if (!is.na(result$model.output.summary['sex_estimate']))
+                        {
+                            denominator_f <- result$model.output.summary['intercept_estimate']
+                            denominator_m <- result$model.output.summary['intercept_estimate']+
+                            result$model.output.summary['sex_estimate']
+                            ratio_f <- result$model.output.summary['genotype_estimate']/denominator_f                        
+                            ratio_m <- result$model.output.summary['genotype_estimate']/denominator_m 
+                        }
+                        else
+                        {
+                            denominator <- result$model.output.summary['intercept_estimate']
+                            ratio_f <- result$model.output.summary['genotype_estimate']/denominator                            
+                            ratio_m <- ratio_f                      
+                        }
+                   }
+                   # with weight
+                   else{
+                        mean_list <- result$model.output.averageRefGenotype
+                        denominator_f <- mean_list[2]
+                        denominator_m <- mean_list[3]
+                        if (!is.na(result$model.output.summary['sex_estimate']) &&
+                        !is.na(result$model.output.summary['sex_FvKO_estimate']))
+                        {
+                            ratio_f <- result$model.output.summary['sex_FvKO_estimate']/denominator_f                       
+                            ratio_m <- result$model.output.summary['sex_MvKO_estimate']/denominator_m 
+                        }
+                        else if (!is.na(result$model.output.summary['sex_FvKO_estimate']))
+                        {
+                            ratio_f <- result$model.output.summary['sex_FvKO_estimate']/denominator_f                            
+                            ratio_m <- result$model.output.summary['sex_MvKO_estimate']/denominator_m            
+                        }
+                        else 
+                        {
+                            ratio_f <- result$model.output.summary['genotype_estimate']/denominator_f                        
+                            ratio_m <- result$model.output.summary['genotype_estimate']/denominator_m 
+                        }
+                   }
+
+                   result$model.output.percentageChanges <- c(ratio_f*100,ratio_m*100)
+                   names(result$model.output.percentageChanges) <- c('female*genotype ratio','male*genotype ratio')
+                   finalResult <- result
+                }
+                else{
+                    # without weight
+                    if (is.na(result$model.output.summary['weight_estimate'])){ 
+                        denominator <- result$model.output.summary['intercept_estimate']
+                        ratio_f <- result$model.output.summary['genotype_estimate']/denominator                            
+                    }
+                    # with weight
+                    else{
+                        mean_list <- result$model.output.averageRefGenotype
+                        denominator <- mean_list[1]
+                        ratio_f <- result$model.output.summary['genotype_estimate']/denominator   
+                    }
+
+                    result$model.output.percentageChanges <- c(ratio_f*100)
+                    names(result$model.output.percentageChanges) <- c('all*genotype ratio')
+                    finalResult <- result
+                }
+                # end of percentage changes calculation
+
+
             },
             
             # End of tryCatch statement - if fails try to suggest smth useful for the user
@@ -612,8 +709,9 @@ finalModel <- function(phenTestResult, outputMessages=TRUE)
             )        
     return(finalResult)
 }
+
 ##------------------------------------------------------------------------------
-## Parser model output summary and return in readable vector format
+## Parses model output summary and returns in readable vector format
 parserOutputSummary<-function(phenTestResult)
 {
     result <- phenTestResult
@@ -681,21 +779,29 @@ parserOutputSummary<-function(phenTestResult)
     
     switch(result$equation,
             withoutWeight = {
+                sex_index <- match(c("SexMale"),row.names(modeloutput_summary[["tTable"]]))
+                sex_FvKO_index <- 3
+                sex_MvKO_index <- 4
+                if (is.na(sex_index)){
+                    sex_index <- match(c("SexFemale"),row.names(modeloutput_summary[["tTable"]]))
+                    sex_FvKO_index <- 4
+                    sex_MvKO_index <- 3
+                }
                 if(result$model.effect.batch){
                     ## for mixed model
                     intercept_estimate = modeloutput_summary[["tTable"]][[1]]
                     intercept_estimate_SE = modeloutput_summary[["tTable"]][[(1+lengthoftable)]]
                     if((result$model.effect.sex && result$model.effect.interaction)
                             |( !result$model.effect.sex&& result$model.effect.interaction)){
-                        sex_estimate=modeloutput_summary[["tTable"]][[2]]
-                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
-                        sex_p_value= modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
-                        sex_FvKO_estimate= modeloutput_summary[["tTable"]][[3]]
-                        sex_FvKO_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
-                        sex_MvKO_estimate=modeloutput_summary[["tTable"]][[4]]
-                        sex_MvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                        sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(4+4*lengthoftable)]]
+                        sex_estimate=modeloutput_summary[["tTable"]][[sex_index]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(sex_index+lengthoftable)]]
+                        sex_p_value= modeloutput_summary[["tTable"]][[(sex_index+4*lengthoftable)]]
+                        sex_FvKO_estimate= modeloutput_summary[["tTable"]][[sex_FvKO_index]]
+                        sex_FvKO_SE=modeloutput_summary[["tTable"]][[(sex_FvKO_index+lengthoftable)]]
+                        sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(sex_FvKO_index+4*lengthoftable)]]
+                        sex_MvKO_estimate=modeloutput_summary[["tTable"]][[sex_MvKO_index]]
+                        sex_MvKO_SE=modeloutput_summary[["tTable"]][[(sex_MvKO_index+lengthoftable)]]
+                        sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(sex_MvKO_index+4*lengthoftable)]]
                     } else if( !result$model.effect.sex && !result$model.effect.interaction){
                         genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                         genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
@@ -705,9 +811,9 @@ parserOutputSummary<-function(phenTestResult)
                         genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                         genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                         genotype_p_value =  modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
-                        sex_estimate=modeloutput_summary[["tTable"]][[3]]
-                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        sex_p_value= modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
+                        sex_estimate=modeloutput_summary[["tTable"]][[sex_index]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(sex_index+lengthoftable)]]
+                        sex_p_value= modeloutput_summary[["tTable"]][[(sex_index+4*lengthoftable)]]
                     }
                     
                 }else{
@@ -719,15 +825,15 @@ parserOutputSummary<-function(phenTestResult)
                     if((result$model.effect.sex && result$model.effect.interaction)
                             |( !result$model.effect.sex&& result$model.effect.interaction)){
                         
-                        sex_estimate=modeloutput_summary[["tTable"]][[3]]
-                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        sex_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
-                        sex_FvKO_estimate= modeloutput_summary[["tTable"]][[3]]
-                        sex_FvKO_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                        sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
-                        sex_MvKO_estimate=modeloutput_summary[["tTable"]][[4]]
-                        sex_MvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                        sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
+                        sex_estimate=modeloutput_summary[["tTable"]][[sex_index]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(sex_index+lengthoftable)]]
+                        sex_p_value= modeloutput_summary[["tTable"]][[(sex_index+3*lengthoftable)]]
+                        sex_FvKO_estimate= modeloutput_summary[["tTable"]][[sex_FvKO_index]]
+                        sex_FvKO_SE=modeloutput_summary[["tTable"]][[(sex_FvKO_index+lengthoftable)]]
+                        sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(sex_FvKO_index+3*lengthoftable)]]
+                        sex_MvKO_estimate=modeloutput_summary[["tTable"]][[sex_MvKO_index]]
+                        sex_MvKO_SE=modeloutput_summary[["tTable"]][[(sex_MvKO_index+lengthoftable)]]
+                        sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(sex_MvKO_index+3*lengthoftable)]]
                         
                         
                     } else if( !result$model.effect.sex && !result$model.effect.interaction){
@@ -741,8 +847,8 @@ parserOutputSummary<-function(phenTestResult)
                         genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                         genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                         genotype_p_value =  modeloutput_summary[["tTable"]][[(2+3*lengthoftable)]]
-                        sex_estimate=modeloutput_summary[["tTable"]][[3]]
-                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
+                        sex_estimate=modeloutput_summary[["tTable"]][[sex_index]]
+                        sex_estimate_SE=modeloutput_summary[["tTable"]][[(sex_index+lengthoftable)]]
                         sex_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
                     }
                     
@@ -750,7 +856,14 @@ parserOutputSummary<-function(phenTestResult)
                 }
             },
             withWeight = {
-                
+                sex_index <- match(c("SexMale"),row.names(modeloutput_summary[["tTable"]]))
+                sex_FvKO_index <- 4
+                sex_MvKO_index <- 5
+                if (is.na(sex_index)){
+                    sex_index <- match(c("SexFemale"),row.names(modeloutput_summary[["tTable"]]))
+                    sex_FvKO_index <- 5
+                    sex_MvKO_index <- 4
+                }
                 if(!result$model.effect.weight){
                     
                     ## If weight is not significant then the output is the
@@ -770,15 +883,15 @@ parserOutputSummary<-function(phenTestResult)
                                 (result$model.effect.weight &&
                                         !result$model.effect.sex &&
                                         result$model.effect.interaction)){
-                            sex_estimate=modeloutput_summary[["tTable"]][[2]]
-                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
-                            sex_p_value= modeloutput_summary[["tTable"]][[(2+4*lengthoftable)]]
-                            sex_FvKO_estimate= modeloutput_summary[["tTable"]][[4]]
-                            sex_FvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                            sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(4+4*lengthoftable)]]
-                            sex_MvKO_estimate=modeloutput_summary[["tTable"]][[5]]
-                            sex_MvKO_SE=modeloutput_summary[["tTable"]][[(5+lengthoftable)]]
-                            sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(5+4*lengthoftable)]]
+                            sex_estimate=modeloutput_summary[["tTable"]][[sex_index]]
+                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(sex_index+lengthoftable)]]
+                            sex_p_value= modeloutput_summary[["tTable"]][[(sex_index+4*lengthoftable)]]
+                            sex_FvKO_estimate= modeloutput_summary[["tTable"]][[sex_FvKO_index]]
+                            sex_FvKO_SE=modeloutput_summary[["tTable"]][[(sex_FvKO_index+lengthoftable)]]
+                            sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(sex_FvKO_index+4*lengthoftable)]]
+                            sex_MvKO_estimate=modeloutput_summary[["tTable"]][[sex_MvKO_index]]
+                            sex_MvKO_SE=modeloutput_summary[["tTable"]][[(sex_MvKO_index+lengthoftable)]]
+                            sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(sex_MvKO_index+4*lengthoftable)]]
                             weight_estimate=modeloutput_summary[["tTable"]][[3]]
                             weight_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
                             weight_p_value=modeloutput_summary[["tTable"]][[(3+4*lengthoftable)]]
@@ -822,18 +935,18 @@ parserOutputSummary<-function(phenTestResult)
                                 (result$model.effect.weight &&
                                         !result$model.effect.sex &&
                                         result$model.effect.interaction)){
-                            sex_estimate=modeloutput_summary[["tTable"]][[2]]
-                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
-                            sex_p_value= modeloutput_summary[["tTable"]][[(2+3*lengthoftable)]]
+                            sex_estimate=modeloutput_summary[["tTable"]][[sex_index]]
+                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(sex_index+lengthoftable)]]
+                            sex_p_value= modeloutput_summary[["tTable"]][[(sex_index+3*lengthoftable)]]
                             weight_estimate=modeloutput_summary[["tTable"]][[3]]
                             weight_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
                             weight_p_value=modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
-                            sex_FvKO_estimate= modeloutput_summary[["tTable"]][[4]]
-                            sex_FvKO_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
-                            sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
-                            sex_MvKO_estimate=modeloutput_summary[["tTable"]][[5]]
-                            sex_MvKO_SE=modeloutput_summary[["tTable"]][[(5+lengthoftable)]]
-                            sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(5+3*lengthoftable)]]
+                            sex_FvKO_estimate= modeloutput_summary[["tTable"]][[sex_FvKO_index]]
+                            sex_FvKO_SE=modeloutput_summary[["tTable"]][[(sex_FvKO_index+lengthoftable)]]
+                            sex_FvKO_p_value=modeloutput_summary[["tTable"]][[(sex_FvKO_index+3*lengthoftable)]]
+                            sex_MvKO_estimate=modeloutput_summary[["tTable"]][[sex_MvKO_index]]
+                            sex_MvKO_SE=modeloutput_summary[["tTable"]][[(sex_MvKO_index+lengthoftable)]]
+                            sex_MvKO_p_value=modeloutput_summary[["tTable"]][[(sex_MvKO_index+3*lengthoftable)]]
                             
                         } else if (result$model.effect.weight &&
                                 result$model.effect.sex &&
@@ -842,9 +955,9 @@ parserOutputSummary<-function(phenTestResult)
                             genotype_estimate = modeloutput_summary[["tTable"]][[2]]
                             genotype_estimate_SE = modeloutput_summary[["tTable"]][[(2+lengthoftable)]]
                             genotype_p_value =  modeloutput_summary[["tTable"]][[(2+3*lengthoftable)]]
-                            sex_estimate=modeloutput_summary[["tTable"]][[3]]
-                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(3+lengthoftable)]]
-                            sex_p_value= modeloutput_summary[["tTable"]][[(3+3*lengthoftable)]]
+                            sex_estimate=modeloutput_summary[["tTable"]][[sex_index]]
+                            sex_estimate_SE=modeloutput_summary[["tTable"]][[(sex_index+lengthoftable)]]
+                            sex_p_value= modeloutput_summary[["tTable"]][[(sex_index+3*lengthoftable)]]
                             weight_estimate=modeloutput_summary[["tTable"]][[4]]
                             weight_estimate_SE=modeloutput_summary[["tTable"]][[(4+lengthoftable)]]
                             weight_p_value=modeloutput_summary[["tTable"]][[(4+3*lengthoftable)]]
