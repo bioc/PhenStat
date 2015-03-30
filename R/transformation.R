@@ -108,7 +108,8 @@ determiningLambda <- function(phenList, depVariable, equation="withWeight"){
     #determine if the confidence interval includes 1 where the transformation has no impact  
     #if includes one - TransformationRequired=FALSE if excludes one then TransformationRequired=TRUE
     RangeExcludes1= !(1 > lambda_CI[1] & 1 < lambda_CI[2])
-    if (lambda_value==100 || lambda_value==-100){
+    
+    if ((lambda_value > 5) || (lambda_value < -5)){
       RangeExcludes1 <- FALSE
     }
     #collate results for export
