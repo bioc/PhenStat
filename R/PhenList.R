@@ -20,7 +20,7 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
         outputMessages=TRUE, dataset.clean=TRUE,
         dataset.colname.batch=NULL, dataset.colname.genotype=NULL,
         dataset.colname.sex=NULL, dataset.colname.weight=NULL,
-        dataset.values.missingValue=NULL, dataset.values.male=NULL,
+        dataset.values.missingValue=" ", dataset.values.male=NULL,
         dataset.values.female=NULL)
 {
    if (class(dataset) == "data.frame") {
@@ -211,7 +211,10 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
     if ('Batch' %in% colnames(dataset))
     dataset$Batch<-factor(dataset$Batch)
         
-            
+    ## CHECKS
+    dataset <- checkDataset(dataset, testGenotype, refGenotype, 
+            outputMessages, dataset.clean)
+    
         checkWeight <- columnChecks(dataset,"Weight",2) 
         
         if (! checkWeight[1]){
@@ -236,11 +239,6 @@ PhenList <- function(dataset, testGenotype, refGenotype='+/+', hemiGenotype=NULL
             }  
         }     
 
-    ## CHECKS
-    dataset <- checkDataset(dataset, testGenotype, refGenotype, 
-            outputMessages, dataset.clean)
-    
-    
     Genotype_levels <- levels(dataset$Genotype)
     Sex_levels <- levels(dataset$Sex)
     

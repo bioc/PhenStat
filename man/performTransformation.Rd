@@ -1,12 +1,12 @@
-\name{transformValues}
-\alias{transformValues}
-\title{Method "transformValues"}
+\name{performTransformation}
+\alias{performTransformation}
+\title{Method "performTransformation"}
 \description{
     Transforms the given vector of values according to the lambda value:
     log transformation if the lambda is 0, power transformation otherwise
 }
 \usage{
-    transformValues(values, lambda, scaleShift)
+    performTransformation(values, lambda, scaleShift)
 }
 \arguments{
     \item{values}{vector of values to reverse}
@@ -18,6 +18,6 @@
 }
 \author{Natalja Kurbatova}
 \examples{
-    transformValues(c(0.1,38,0.5),-0.7,0)
+    performTransformation(c(0.1,38,0.5),-0.7,0)
 }    
 \keyword{internal}

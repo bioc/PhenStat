@@ -29,15 +29,18 @@
 testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight", 
         outputMessages=TRUE, pThreshold=0.05, method="MM", callAll=TRUE, 
         keepList=NULL, dataPointsThreshold=4, RR_naturalVariation=95, 
-        RR_controlPointsThreshold=60, transformValues=TRUE)
+        RR_controlPointsThreshold=60, transformValues=FALSE)
 {
 
     stop_message <- ""
     transformationRequired <- FALSE
     lambdaValue <- NA
+    scaleShift <- NA
+    transformationCode <- 0
     columnOfBatch <- NULL
     columnOfWeight <- NULL
-    columnOfInterestAdjusted <- NULL
+    columnOfInterestBatchAdjusted <- NULL
+    columnOfInterestBatchWeightAdjusted <- NULL
     ## CHECK ARGUMENTS   
     
     # 1
@@ -77,15 +80,21 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
                 "'RR' for Reference Ranges Plus framework and 'TF' value for Time as Fixed Effect framework.\n",
                 sep="")
         
-    }   
+    }  
     
-    # 6
+    # 6 
+    # Transformation performed only for MM and TF (linear regression methods for continuous data))
+    if (method %in% c("RR","FE","LR")){ 
+        transformValues <- FALSE
+    }
+    
+    # 7
     if (dataPointsThreshold<2) {
         dataPointsThreshold <- 2
         if (outputMessages)
         message("Warning:\nData points threshold is set to 2 (minimal value).\n")
     }
-    
+
     # RR_naturalVariation=95, RR_controlPointsThreshold=60
     if (RR_naturalVariation<60) {
         RR_naturalVariation <- 60
@@ -115,23 +124,27 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
     if (nchar(stop_message)==0) {
             checkDepV <- columnChecks(getDataset(phenList),depVariable,dataPointsThreshold)
             # TRANSFORMATION
-            # check if the method selected is not for categorical data - if so we don't want to transform values
-            if (!(method %in% c("FE","LR","RR")) && checkDepV[2] && checkDepV[3]) {
+            if (transformValues && checkDepV[2] && checkDepV[3]) {
                 # check for transformation
                 transformationVector <- determiningLambda(phenList,depVariable,equation)
                 transformationRequired <- as.logical(transformationVector[[5]])
                 lambdaValue <- as.numeric(transformationVector[[4]])
+                transformationCode <- as.numeric(transformationVector[[7]]) 
                 if (!is.na(transformationVector[[6]])){
                     scaleShift <- as.numeric(transformationVector[[6]])
                 }
                 else {scaleShift <- 0 }
-                if (transformValues && transformationRequired){
+                if (transformationRequired){
                     columnOfInterestOriginal <- columnOfInterest
-                    columnOfInterest <- round(transformValues(columnOfInterest,lambdaValue,scaleShift),digits=6)
+                    columnOfInterest <- round(performTransformation(columnOfInterest,lambdaValue,scaleShift),digits=6)
                 }
                 if (batchIn(phenList)){
                     # Adjusted for batch depVariable values WITHOUT transformation!
-                    columnOfInterestAdjusted=getColumnBatchAdjusted(phenList,depVariable)
+                    columnOfInterestBatchAdjusted <- getColumnBatchAdjusted(phenList,depVariable)
+                }
+                if (weightIn(phenList)){
+                  # Adjusted for weight and batch if present depVariable values WITHOUT transformation!
+                  columnOfInterestBatchWeightAdjusted <- getColumnWeightBatchAdjusted(phenList,depVariable)
                 }
             }
             else {
@@ -182,14 +195,20 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
                 datasetToAnalyse <- data.frame(columnOfInterest,columnOfSex,columnOfGenotype)
                 colnames(datasetToAnalyse)<-c(depVariable,"Sex","Genotype") 
                 }
-            if (transformValues && transformationRequired && (!(method %in% c("FE","LR","RR")))){
+            if (transformValues && transformationRequired){
                 columnNameOriginal <- paste(depVariable,"_original",sep="")
                 datasetToAnalyse[,columnNameOriginal] <- columnOfInterestOriginal
             }
-            if (!is.null(columnOfInterestAdjusted)) {
-                columnNameAdjusted <- paste(depVariable,"_adjusted",sep="")
-                datasetToAnalyse[,columnNameAdjusted] <- columnOfInterestAdjusted  
+            if (!is.null(columnOfInterestBatchAdjusted)) {
+                columnNameBatchAdjusted <- paste(depVariable,"_batch_adjusted",sep="")
+                datasetToAnalyse[,columnNameBatchAdjusted] <- columnOfInterestBatchAdjusted  
             }
+            if (!is.null(columnOfInterestBatchWeightAdjusted)) {
+              columnNameBatchWeightAdjusted <- paste(depVariable,"_batch_weight_adjusted",sep="")
+              datasetToAnalyse[,columnNameBatchWeightAdjusted] <- columnOfInterestBatchWeightAdjusted  
+            }
+            
+            
 
 
         phenListToAnalyse <- new("PhenList",datasetPL=datasetToAnalyse,
@@ -212,6 +231,7 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
             # Numeric
             if (!checkDepV[2]) {
                 method <- "FE"
+                transformValues <- FALSE
                 if (outputMessages)
                 message(paste("Warning:\nDependent variable '",depVariable,
                                 "' is not numeric. Fisher Exact Test will be used for the ", 
@@ -229,7 +249,7 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
                 # where checkDepVLevels[2] contains number of levels and checkDepVLevels[1] contains number of data points
                 # One level only
                 if (checkDepVLevels[2]==1 || checkDepVLevels[2]==0){ 
-                    if (transformValues && transformationRequired && (!(method %in% c("FE","LR","RR")))){
+                    if (transformValues && transformationRequired){
                          stop_message <- paste(stop_message,"Error:\nNo variability in dependent variable '",
                                         depVariable,"'. Try with argument transformValues set to FALSE.\n",sep="") 
                     }
@@ -504,13 +524,20 @@ testDataset <- function(phenList=NULL, depVariable=NULL, equation="withWeight",
         }
     }
 
-    if (transformValues && transformationRequired && (method!="FE") && (method!="LR")){
+    result@transformationCode <- transformationCode
+    if (transformValues && transformationRequired){
+        # Code = 2 or 3
         result@transformationRequired <- as.logical(transformationRequired)
         result@lambdaValue <- lambdaValue
         result@scaleShift <- scaleShift
     }
     else {
         result@transformationRequired <- FALSE
+        if (transformValues){
+                # Code = 1 or 4
+                result@lambdaValue <- lambdaValue
+                result@scaleShift <- scaleShift
+        }
     } 
     
     return(result)   

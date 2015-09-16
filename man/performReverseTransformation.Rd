@@ -1,12 +1,12 @@
-\name{reverseTransformValues}
-\alias{reverseTransformValues}
-\title{Method "reverseTransformValues"}
+\name{performReverseTransformation}
+\alias{performReverseTransformation}
+\title{Method "performReverseTransformation"}
 \description{
     Reverse back the transformed values according to the lambda value:
     exponential transformation if the lambda is 0, fractional power transformation otherwise 
 }
 \usage{
-    reverseTransformValues(values, lambda, scaleShift)
+    performReverseTransformation(values, lambda, scaleShift)
 }
 \arguments{
     \item{values}{vector of values to reverse}
@@ -18,6 +18,6 @@
 }
 \author{Natalja Kurbatova}
 \examples{
-    reverseTransformValues(c(-5.7312462,1.3166139,-0.8921497),-0.7,0)
+    performReverseTransformation(c(-5.7312462,1.3166139,-0.8921497),-0.7,0)
 }    
 \keyword{internal}

@@ -1,5 +1,24 @@
 \name{PhenStat-NEWS}
 \title{PhenStat News}
+\section{CHANGES IN VERSION 2.3.1}{
+  \subsection{NEW FUNCTIONALITY}{        
+        \itemize{
+            \item New output format is added: JSON format. In odred to get output in JSON 
+            format apply JSONOutput with the PhenTestResult object as an argument.
+        }
+    }
+    
+
+  \subsection{COMPATIBILITY ISSUES}{
+      
+        \itemize{            
+            \item The Box-Cox transformation is switched off by default. In order 
+            to swithc in on the \code{testDataset()} function's argument “transformValues" 
+            has to be set to TRUE.            
+        }
+    }  
+}
+
 \section{CHANGES IN VERSION 2.1.3}{
     
     \subsection{NEW FUNCTIONALITY}{        

@@ -183,6 +183,52 @@ setMethod("getColumnBatchAdjusted", signature(obj = "PhenList",columnName="chara
         }
         )
 ##------------------------------------------------
+# Column of interest adjusted for weight
+setGeneric("getColumnWeightBatchAdjusted",
+           function(obj,columnName)
+             standardGeneric("getColumnWeightBatchAdjusted"))
+
+setMethod("getColumnWeightBatchAdjusted", signature(obj = "PhenList",columnName="character"),
+          function(obj, columnName){
+            columnOfInterest <- NULL
+            if (c(columnName) %in% colnames(getDataset(obj))){
+              columnOfInterest <- getDataset(obj)[,c(columnName)] 
+              weightBatchIn <- (multipleBatches(obj) && weightIn(obj))
+              weightOnly <- (!(multipleBatches(obj)) && weightIn(obj))
+              batchOnly <- (multipleBatches(obj) && !(weightIn(obj)))
+              # Only batch is present 
+              if (batchOnly){
+                columnOfInterest <- getColumnBatchAdjusted(obj,columnName)
+              }
+              # Both batch and weight are in
+              if (weightBatchIn){
+                nullFormula=as.formula(paste(columnName, "Weight",  sep="~"))                
+                model.null=do.call("lme", args = list(nullFormula, 
+                                                      random=~1|Batch, 
+                                                      getDataset(obj), 
+                                                      na.action="na.exclude", 
+                                                      method="ML"))
+                # Find the depVariable column adjusted for the batch effect
+                columnOfInterest=resid(model.null)   
+              }
+              # Only weight is present
+              else {
+                if (weightOnly){
+                  nullFormula=as.formula(paste(columnName, "Weight",  sep="~"))  
+                  model_null <- do.call("gls", args=list(nullFormula,
+                                                         getDataset(obj), 
+                                                         na.action="na.exclude"))
+                  # Find the depVariable column adjusted for the batch effect
+                  columnOfInterest=resid(model.null)   
+                }
+              }
+
+              
+            }
+            columnOfInterest
+          }
+)
+##------------------------------------------------
 # Variables
 setGeneric("getVariables",
         function(obj)
@@ -301,12 +347,16 @@ setClass("PhenTestResult",
                 transformationRequired = "logical",
                 lambdaValue = "numeric",
                 scaleShift = "numeric",
+                transformationCode = "numeric",
                 depVariable = "character",
                 refGenotype = "character",
                 testGenotype = "character",
                 method = "character",
                 parameters = "matrix",
-                analysisResults="list")
+                analysisResults = "list"),
+        prototype=list(
+                transformationCode = 0
+                )
         
 )
 # Stores statistical analysis results:  depending on method they can be gls, lme (MM and TF), loigstf (LR), 
@@ -337,9 +387,18 @@ transformationText = function(obj)
                         ,""))
         ,"")
 transformation = function(obj) 
-    ifelse(obj@transformationRequired,
-        paste("lambda=",obj@lambdaValue,", scaleShift=",obj@scaleShift,sep="")
-        ,"lambda=NA, scaleShift=NA")
+    ifelse((obj@transformationCode!=0),
+        paste("lambda=",obj@lambdaValue,", scaleShift=",obj@scaleShift,                
+                ", transformed=",obj@transformationRequired,
+                ", code=",obj@transformationCode,sep="")
+        ,"lambda=NA, scaleShift=NA, transformed=FALSE, code=0")
+
+transformationJSON = function(obj) 
+  ifelse((obj@transformationCode!=0),
+         paste('"lambda value":',obj@lambdaValue,', "scale shift":',obj@scaleShift,                
+               ', "variable values are transformed":"',obj@transformationRequired,
+               '", "code":"',obj@transformationCode,'"',sep="")
+         ,'"lambda value":NA, "scale shift":NA, "transformed":"FALSE", "code":"0"')
 ##------------------------------------------------
 # Number of sexes
 setMethod("noSexes", signature(obj = "PhenTestResult"),
@@ -462,7 +521,7 @@ setMethod("getGenotypeEffect", signature(obj = "PhenTestResult"),
                 effect_values <- c(obj@analysisResults$model.output.summary["genotype_estimate"],
                         obj@analysisResults$model.output.summary["genotype_estimate_SE"])
                 if (obj@transformationRequired)
-                    effect_values <- reverseTransformValues(effect_values,obj@lambdaValue,obj@scaleShift)
+                    effect_values <- performReverseTransformation(effect_values,obj@lambdaValue,obj@scaleShift)
                 
                 as.numeric(effect_values)
             }

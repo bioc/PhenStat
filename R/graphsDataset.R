@@ -67,15 +67,21 @@ boxplotSexGenotype<-function(phenList, depVariable=NULL,
     else {
         ## Plot creation
         numberofsexes <- length(levels(x$Sex))
+        if (is.numeric(x[ ,depVariable]))   
+          y_range <- c(min(x[ ,depVariable], na.rm=TRUE), 
+                       max((x[ ,depVariable]), na.rm=TRUE))
+        else
+          y_range <- c(1, length(levels(x[ ,depVariable])))
+        
         if(numberofsexes==2){
             Male <- subset(x, x$Sex=="Male")
-            Female <- subset(x, x$Sex=="Female")
+            Female <- subset(x, x$Sex=="Female")      
             op <- par(mfrow=c(1,2))
             boxplot(Male[ , depVariable]~Male$Genotype, 
-                    ylab=graphingName, xlab="Genotype")
+                    ylab=graphingName, xlab="Genotype",ylim=y_range)
             legend("topright", "Male", cex=1.3, bty="n")
             boxplot(Female[ , depVariable]~Female$Genotype, 
-                    ylab=graphingName, xlab="Genotype")
+                    ylab=graphingName, xlab="Genotype",ylim=y_range)
             legend("topright", "Female", cex=1.3, bty="n")
             par(op) 
             op_normal <- par(mfrow=c(1,1))
@@ -151,15 +157,21 @@ boxplotSexGenotypeBatchAdjusted<-function(phenList, depVariable=NULL,
         
         ## Plot creation
         numberofsexes <- length(levels(x$Sex))
+        if (is.numeric(x[ ,depVariable]))   
+          y_range <- c(min(x[ ,depVariable], na.rm=TRUE), 
+                       max((x[ ,depVariable]), na.rm=TRUE))
+        else
+          y_range <- c(1, length(levels(x[ ,depVariable])))
+        
         if(numberofsexes==2){
             Male <- subset(x, x$Sex=="Male")
-            Female <- subset(x, x$Sex=="Female")
+            Female <- subset(x, x$Sex=="Female")            
             op <- par(mfrow=c(1,2))
             boxplot(Male[ , depVariable]~Male$Genotype, 
-                    ylab=graphingName, xlab="Genotype")
+                    ylab=graphingName, xlab="Genotype", ylim=y_range)
             legend("topright", "Male", cex=1.3, bty="n")
             boxplot(Female[ , depVariable]~Female$Genotype, 
-                    ylab=graphingName, xlab="Genotype")
+                    ylab=graphingName, xlab="Genotype", ylim=y_range)
             legend("topright", "Female", cex=1.3, bty="n")
             par(op) 
             op_normal <- par(mfrow=c(1,1))
@@ -172,6 +184,102 @@ boxplotSexGenotypeBatchAdjusted<-function(phenList, depVariable=NULL,
         
 
     }
+}
+##------------------------------------------------------------------------------
+##Graphing after accounting for weight and batch
+boxplotSexGenotypeWeightBatchAdjusted<-function(phenList, depVariable=NULL, 
+                                          graphingName=NULL, outputMessages=TRUE){
+  stop_message <- ""
+  ## Checks
+  if (is.null(depVariable)) 
+    stop_message <- paste(stop_message,
+                          "Error:\nPlease define dependent variable 'depVariable'.\n",sep="")
+  else {
+    if (is.null(graphingName))
+      graphingName <- paste(depVariable," adjusted for weight and batch",sep="")
+  }
+  
+  if(is(phenList,"PhenList")) {
+    x <- getDataset(phenList)
+    
+    if (nchar(stop_message)==0){
+      if (!(depVariable %in% colnames(x)))
+        stop_message <- paste(stop_message,
+          "Error:\n",depVariable," column is missed in the dataset.",
+          sep="")
+      else {
+        if (!multipleBatches(phenList) && !weightIn(phenList)){ 
+          stop_message <- paste(stop_message,
+          "Error:\n Plot creation relies on having batch and weight variation.",
+          sep="")
+        }
+        else { 
+          columnOfInterest <- x[,c(depVariable)]
+          
+          ## Test: depVariable is numeric 
+          if(!is.numeric(columnOfInterest))
+            stop_message <- paste(stop_message,
+                            "Error:\n",depVariable," variable is not numeric. ",
+                            "Can't create a plot based on it.",sep="")
+        }
+      }       
+      
+    }
+    
+  } else {
+    stop_message <- paste(stop_message,
+                          "Error:\nPlease define PhenList object.\n",sep="")
+  }
+  
+  
+  if (nchar(stop_message)>0){
+    if (outputMessages){
+      message(stop_message)
+      opt <- options(show.error.messages=FALSE)
+      on.exit(options(opt))
+      stop()
+    }
+    else {
+      stop(stop_message)
+    }
+  } 
+  else {
+    message(paste("Information:\n",depVariable," variable is adjusted ",
+            "treating batch as a random effect and weight as a fixed effect.",
+            sep=""))
+    ## Plot creation             
+    # relies on having batch variation   
+    x[, depVariable] <- getColumnWeightBatchAdjusted(phenList,depVariable)
+    
+    ## Plot creation
+    numberofsexes <- length(levels(x$Sex))
+    if (is.numeric(x[ ,depVariable]))   
+      y_range <- c(min(x[ ,depVariable], na.rm=TRUE), 
+                   max((x[ ,depVariable]), na.rm=TRUE))
+    else
+      y_range <- c(1, length(levels(x[ ,depVariable])))
+    
+    if(numberofsexes==2){
+      Male <- subset(x, x$Sex=="Male")
+      Female <- subset(x, x$Sex=="Female")
+      op <- par(mfrow=c(1,2))
+      boxplot(Male[ , depVariable]~Male$Genotype, 
+              ylab=graphingName, xlab="Genotype", ylim=y_range)
+      legend("topright", "Male", cex=1.3, bty="n")
+      boxplot(Female[ , depVariable]~Female$Genotype, 
+              ylab=graphingName, xlab="Genotype",ylim=y_range)
+      legend("topright", "Female", cex=1.3, bty="n")
+      par(op) 
+      op_normal <- par(mfrow=c(1,1))
+      par(op_normal) 
+    }else{
+      op <- par(mfrow=c(1,1))
+      boxplot(x[ ,depVariable]~x$Genotype, ylab=graphingName, xlab="Genotype")  
+      par(op)  
+    }
+    
+    
+  }
 }
 ##------------------------------------------------------------------------------
 ## Raw data boxplot: split by sex,genotype and batch
@@ -240,10 +348,10 @@ boxplotSexGenotypeBatch<-function(phenList, depVariable=NULL,
         ## Plot creation
         numberofsexes <- length(levels(x$Sex))
         if (is.numeric(x[ ,depVariable]))   
-        y_range <- c(min(x[ ,depVariable], na.rm=TRUE), 
-                max((x[ ,depVariable]), na.rm=TRUE))
+          y_range <- c(min(x[ ,depVariable], na.rm=TRUE), 
+                  max((x[ ,depVariable]), na.rm=TRUE))
         else
-        y_range <- c(1, length(levels(x[ ,depVariable])))
+          y_range <- c(1, length(levels(x[ ,depVariable])))
         
         if(numberofsexes==2){
             Male <- subset(x, x$Sex=="Male")
