@@ -1,7 +1,7 @@
 Package: PhenStat
 Type: Package
 Title: Statistical analysis of phenotypic data
-Version: 2.3.1
+Version: 2.4.0
 Date: 2015-09-16
 Author: Natalja Kurbatova, Natasha Karp, Jeremy Mason
 Maintainer: Natasha Karp <nk3@sanger.ac.uk>
