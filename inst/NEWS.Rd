@@ -1,5 +1,14 @@
 \name{PhenStat-NEWS}
 \title{PhenStat News}
+\section{CHANGES IN VERSION 2.3.4}{
+  \subsection{NEW FUNCTIONALITY}{        
+        \itemize{
+            \item PhenList object stores unfiltered dataset for the possible future usage in RR and FE frameworks.
+            \item testDataset function: argument's "useUnfiltered" with default value set to FALSE. Can be used to process dataset in RR and FE frameworks with unfiltered by genotype/sex combination records (see p.21 of User Guide).
+        }
+    }
+}
+
 \section{CHANGES IN VERSION 2.3.1}{
   \subsection{NEW FUNCTIONALITY}{        
         \itemize{

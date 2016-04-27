@@ -4,11 +4,11 @@
 \docType{methods}
 \description{
     Method \code{analysedDatasetPhenList} returns subset of the original dataset 
-    that was analysed in the form of PhenList object
+    that will be analysed
 }
 \section{Methods}{
     \describe{       
-        \item{\code{signature(obj = "PhenTestResult")}}{
+        \item{\code{signature(obj = "PhenList")}}{
             %%  Returns analysed dataset
         }
     }}
