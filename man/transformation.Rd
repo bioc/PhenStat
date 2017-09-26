@@ -3,12 +3,16 @@
 \title{Method "transformation"}
 \docType{methods}
 \description{
-    Method \code{transformation} returns transformation values: lamda=value, scaleShift=value 
+    Method \code{transformation} returns transformation values: lamda=value, scaleShift=value
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenTestResult")}}{
             %%  Returns transformation values
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns transformation values.
+}

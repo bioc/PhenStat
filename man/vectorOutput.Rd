@@ -27,18 +27,18 @@
 \examples{
     # Mixed Model framework
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             depVariable="Lean.Mass")
-    vectorOutput(result)
+    PhenStat:::vectorOutput(result)
     
     # Fishe Exact Test framework
     file <- system.file("extdata", "test_categorical.csv", package="PhenStat")
-    test2 <- PhenList(dataset=read.csv(file),
+    test2 <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Aff3/Aff3")
-    result2 <- testDataset(test2,
+    result2 <- PhenStat:::testDataset(test2,
             depVariable="Thoracic.Processes",
             method="FE")  
-    vectorOutput(result2)
+    PhenStat:::vectorOutput(result2)
 }

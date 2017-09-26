@@ -7,7 +7,9 @@
     (number of data points for each genotype/sex combination is at least equals to threshold).
 }
 \usage{
-    columnChecks(dataset, columnName, dataPointsThreshold=4)
+    columnChecks(dataset, 
+				columnName, 
+				dataPointsThreshold=4)
 }
 \arguments{
     \item{dataset}{data frame created from file or from another source; mandatory argument}

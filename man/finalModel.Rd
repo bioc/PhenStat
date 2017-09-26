@@ -10,7 +10,8 @@
     stored in \code{\linkS4class{PhenTestResult}} object.
 }
 \usage{
-    finalModel(phenTestResult, outputMessages = TRUE)
+    finalModel(phenTestResult, 
+				outputMessages = TRUE)
 }
 \arguments{   
     \item{phenTestResult}{instance of the \code{\linkS4class{PhenTestResult}} class that comes from the function \code{\link{testDataset}}; mandatory argument}
@@ -30,11 +31,11 @@
 \seealso{\code{\linkS4class{PhenTestResult}} and \code{\link{testDataset}}}
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
     # when "testDataset" function's argument "callAll" is set to FALSE 
     # only "startModel" function is called - the first step of MM framework
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             depVariable="Lean.Mass",
             equation="withoutWeight",
             callAll=FALSE) 
@@ -43,12 +44,12 @@
     # print out batch effect's significance 
     # result$model.effect.batch
     # change the model
-    # result <- testDataset(test,
+    # result <- PhenStat:::testDataset(test,
     #        depVariable="Lean.Mass",
     #        equation="withWeight",
     #        callAll=FALSE) 
     # print out new formula
     #result$model.formula.genotype
     # run the final model fitting when statisfied with the model
-    result <- finalModel(result)
+    result <- PhenStat:::finalModel(result)
 }

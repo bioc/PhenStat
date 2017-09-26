@@ -10,7 +10,13 @@
     Works with \code{\linkS4class{PhenList}} object created by \code{\link{PhenList}} function.     
 }
 \usage{
-    RRTest(phenList, depVariable, outputMessages=TRUE, naturalVariation=95, controlPointsThreshold=60)
+    RRTest(
+		  phenList,
+		  depVariable,
+		  outputMessages = TRUE,
+		  naturalVariation = 95,
+		  controlPointsThreshold = 60
+)
 }
 \arguments{   
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}
@@ -33,12 +39,12 @@
 \seealso{\code{\linkS4class{PhenList}} and \code{\link{testDataset}}}
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
     # "RRTest" function is called from "testDataset" function
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             depVariable="Lean.Mass",
             method="RR")
     # RR test results can be printed out using function "summaryOutput"
-    summaryOutput(result)
+    summary(result)
 }

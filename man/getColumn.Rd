@@ -6,9 +6,13 @@
     Method \code{getColumn} returns column of interest
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns column of interest
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns column of interest
+}

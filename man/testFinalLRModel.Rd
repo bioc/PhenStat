@@ -25,11 +25,11 @@
 \seealso{\code{\linkS4class{PhenTestResult}}}
 \examples{
     file <- system.file("extdata", "testLR.csv", package="PhenStat")
-    testLR <- PhenList(dataset=read.csv(file),
+    testLR <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Mock")
-    testLR2 <- LRDataset(testLR,"V2")
-    resultLR <- testDataset(testLR2,
+    testLR2 <- PhenStat:::LRDataset(testLR,"V2")
+    resultLR <- PhenStat:::testDataset(testLR2,
             depVariable="V2",
             method="LR")
-    testFinalLRModel(resultLR)
+    PhenStat:::testFinalLRModel(resultLR)
 }

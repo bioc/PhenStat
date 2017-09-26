@@ -145,29 +145,29 @@
 \examples{
     # Mixed Model framework
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             equation="withoutWeight",
             depVariable="Bone.Area")
-    getVariable(result)
-    method(result)
+    PhenStat:::getVariable(result)
+    PhenStat:::method(result)
     # Batch effect is significant
-    analysisResults(result)$model.effect.batch    
+    PhenStat:::analysisResults(result)$model.effect.batch    
     # Variance homogeneosity 
-    analysisResults(result)$model.effect.variance
+    PhenStat:::analysisResults(result)$model.effect.variance
     # Weight effect is significant
-    analysisResults(result)$model.effect.weight     
+    PhenStat:::analysisResults(result)$model.effect.weight     
     # Sex effect is significant 
-    analysisResults(result)$model.effect.interaction    
+    PhenStat:::analysisResults(result)$model.effect.interaction    
     # Sex effect p-value - the result of the test 
-    analysisResults(result)$model.output.interaction
+    PhenStat:::analysisResults(result)$model.output.interaction
     # Genotype effect p-value    
-    analysisResults(result)$model.output.genotype.nulltest.pVal
+    PhenStat:::analysisResults(result)$model.output.genotype.nulltest.pVal
     # Final model formula with genotype
-    analysisResults(result)$model.formula.genotype 
+    PhenStat:::analysisResults(result)$model.formula.genotype 
     # Final model formula without genotype    
-    analysisResults(result)$model.formula.null 
+    PhenStat:::analysisResults(result)$model.formula.null 
     # Final model fitting output
     # result$model.output 
     # Final model fitting summary
@@ -175,15 +175,15 @@
     
     # Fisher Exact Test framework
     file <- system.file("extdata", "test_categorical.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Aff3/Aff3")
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             depVariable="Thoracic.Processes",
             method="FE") 
-    getVariable(result)
-    method(result)       
+    PhenStat:::getVariable(result)
+    PhenStat:::method(result)       
     for (i in seq_along(analysisResults(result))) {
-        val <- analysisResults(result)[[i]]
+        val <- PhenStat:::analysisResults(result)[[i]]
         val
     }
 }

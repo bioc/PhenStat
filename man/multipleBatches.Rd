@@ -6,9 +6,13 @@
     Method \code{multipleBatches} returns TRUE if there are multiple batches in the dataset, FALSE otherwise
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns TRUE if there are multiple batches
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns TRUE if there are multiple batches in the dataset.
+}

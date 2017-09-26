@@ -11,7 +11,8 @@
     stored in \code{\linkS4class{PhenTestResult}} object.
 }
 \usage{
-    finalTFModel(phenTestResult, outputMessages = TRUE)
+    finalTFModel(phenTestResult, 
+				outputMessages = TRUE)
 }
 \arguments{   
     \item{phenTestResult}{instance of the \code{\linkS4class{PhenTestResult}} class that comes from the function \code{\link{testDataset}}; mandatory argument}
@@ -31,7 +32,7 @@
 \seealso{\code{\linkS4class{PhenTestResult}} and \code{\link{testDataset}}}
 \examples{
     file <- system.file("extdata", "test7_TFE.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenList(dataset=read.csv(file,na.strings = '-'),
                      testGenotype="het",
                      refGenotype = "WT",
                      dataset.colname.sex="sex",
@@ -41,17 +42,17 @@
                      dataset.colname.weight="body.weight",
                      dataset.colname.batch="Date_of_procedure_start")
 
-    test_TF <- TFDataset(test,depVariable="Cholesterol")
+    test_TF <- PhenStat:::TFDataset(test,depVariable="Cholesterol")
     
     # when "testDataset" function's argument "callAll" is set to FALSE 
     # only "startTFModel" function is called - the first step of TFE framework
-    result  <- testDataset(test_TF,
+    result  <- PhenStat:::testDataset(test_TF,
                            depVariable="Cholesterol",
                            callAll=FALSE,
                            method="TF")
     # print out formula that has been created
-    analysisResults(result)$model.formula.genotype
+    PhenStat:::analysisResults(result)$model.formula.genotype
     # print out batch effect's significance 
-    analysisResults(result)$model.effect.batch
-    result <- finalTFModel(result)
+    PhenStat:::analysisResults(result)$model.effect.batch
+    result <- PhenStat:::finalTFModel(result)
 }

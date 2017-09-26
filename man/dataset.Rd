@@ -6,9 +6,13 @@
     Method \code{dataset} returns data frame stored in the object
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns data frame
         }
     }}
 \keyword{methods}
+
+\value{
+    returns data frame stored in the object
+}

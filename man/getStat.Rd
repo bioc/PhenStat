@@ -6,9 +6,13 @@
     Method \code{getStat} returns simple statistics about variables in the dataset
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns simple statistics about variables in the dataset
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns simple statistics about variables in the dataset
+}

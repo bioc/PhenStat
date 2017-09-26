@@ -26,10 +26,10 @@
 \seealso{\code{\linkS4class{PhenTestResult}}}
 \examples{
     file <- system.file("extdata", "test_categorical.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Aff3/Aff3")
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             depVariable="Thoracic.Processes",
             method="FE")  
-    vectorOutputMatrices(result)
+    PhenStat:::vectorOutputMatrices(result)
 }

@@ -25,9 +25,9 @@
 }
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
-    dim(test)
+    PhenStat:::dim.PhenList(test)
 }
 \keyword{internal}
 

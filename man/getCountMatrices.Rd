@@ -6,9 +6,13 @@
     Method \code{getCountMatrices} returns count matrices for FE and RR frameworks
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenTestResult")}}{
-            %%  Returns count matrices 
+            %%  Returns count matrices
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns count matrices for FE and RR frameworks
+}

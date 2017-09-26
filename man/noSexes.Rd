@@ -8,7 +8,7 @@
     Method \code{noSexes} returns number of sex levels: 1/2
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns number of sex levels
         }
@@ -17,3 +17,7 @@
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns number of sex levels.
+}

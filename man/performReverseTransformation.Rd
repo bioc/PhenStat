@@ -18,6 +18,6 @@
 }
 \author{Natalja Kurbatova}
 \examples{
-    performReverseTransformation(c(-5.7312462,1.3166139,-0.8921497),-0.7,0)
+    PhenStat:::performReverseTransformation(c(-5.7312462,1.3166139,-0.8921497),-0.7,0)
 }    
 \keyword{internal}

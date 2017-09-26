@@ -23,3 +23,7 @@
 \keyword{classes}
 
 \keyword{internal}
+
+\value{
+    Empty.
+}

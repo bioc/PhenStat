@@ -6,7 +6,7 @@
     Method \code{hemiGenotype} returns hemi genotype if defined
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns hemi genotype
         }
@@ -15,3 +15,7 @@
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns hemi genotype if defined
+}

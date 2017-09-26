@@ -33,8 +33,11 @@
     Function \code{\link{checkDataset}} is called from \code{\link{PhenList}} function. 
 }
 \usage{
-    checkDataset(dataset, testGenotype, refGenotype="+/+", 
-            outputMessages=TRUE, dataset.clean=TRUE) 
+    checkDataset(dataset, 
+				testGenotype, 
+				refGenotype="+/+",
+				outputMessages=TRUE,
+				dataset.clean=TRUE) 
     
 }
 \arguments{
@@ -62,7 +65,7 @@
 \examples{    
     # "checkDataset" is called internally from "PhenList" function
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")    
     
 }

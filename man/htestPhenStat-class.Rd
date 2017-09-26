@@ -17,15 +17,15 @@
 
 \section{Explore htestPhenStat object}{
     A list with "htest" components in modelOutput slot and the additional PhenStat specific slots:
-    
+
     1. modelOutput: htest object with Fisher Exact test (fisher.test) output
-    
+
     2. analysedSubset: the subset analysed with possible values "all", "males", "females"
-    
+
     3. comparison: for the RR method with possible values "High vs Normal/Low", "Low vs Normal/High"
-    
+
     4. ES: effect size value
-    
+
     5. matrixCount: matrix of counts used for the test
 
 }
@@ -55,12 +55,12 @@
 
 \examples{
     file <- system.file("extdata", "test_categorical.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Aff3/Aff3")
     # "FisherExactTest" function is called from "testDataset" function.
-    result <- testDataset(test,depVariable="Thoracic.Processes",method="FE")  
+    result <- PhenStat:::testDataset(test,depVariable="Thoracic.Processes",method="FE")
     # Fisher Exact Test results can be printed out using function "summaryOutput"
-    val <- analysisResults(result)[[1]]
+    val <- PhenStat:::analysisResults(result)[[1]]
     print(val)
     class(val)
 }
@@ -68,3 +68,7 @@
 \keyword{classes}
 \keyword{methods}
 \keyword{internal}
+
+\value{
+    Empty.
+}

@@ -18,6 +18,6 @@
 }
 \author{Natalja Kurbatova}
 \examples{
-    performTransformation(c(0.1,38,0.5),-0.7,0)
+    PhenStat:::performTransformation(c(0.1,38,0.5),-0.7,0)
 }    
 \keyword{internal}

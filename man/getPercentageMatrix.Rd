@@ -6,9 +6,12 @@
     Method \code{getPercentageMatrix} returns percentage matrix calculated out of counts
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "htestPhenStat")}}{
             %%  Returns percentage matrix
         }
     }}
 \keyword{methods}
+\value{
+    This function returns percentage matrix calculated out of counts.
+}

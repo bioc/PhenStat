@@ -6,9 +6,12 @@
     Method \code{parameters} returns parameters specific for apllied method/dataset combination
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenTestResult")}}{
             %%  Returns parameters specific for apllied method/dataset combination
         }
     }}
 \keyword{methods}
+\value{
+    This function returns parameters specific for apllied method/dataset combination.
+}

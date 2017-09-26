@@ -6,9 +6,13 @@
     Method \code{transformationText} returns transformation values as one string
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenTestResult")}}{
             %%  Returns transformation values as one string
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns transformation values as one string.
+}

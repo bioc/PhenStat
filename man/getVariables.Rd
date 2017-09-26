@@ -6,9 +6,13 @@
     Method \code{getVariables} returns names of variables in the dataset
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns names of the variables in the dataset
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns names of variables in the dataset
+}

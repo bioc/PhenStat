@@ -6,9 +6,13 @@
     Method \code{getVariable} returns dependent variable name
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenTestResult")}}{
-            %%  Returns dependent variable name 
+            %%  Returns dependent variable name
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns dependent variable name
+}

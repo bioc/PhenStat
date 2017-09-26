@@ -6,7 +6,9 @@
    Returns the method or the list of methods that are appropriate for statistical analysis. 
 }    
 \usage{
-    recommendMethod(phenList=NULL, depVariable=NULL, outputMessages=TRUE)
+    recommendMethod(phenList = NULL,
+                depVariable = NULL,
+                outputMessages = TRUE)
 }
 \arguments{
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}       
@@ -29,7 +31,7 @@
 
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
-    recommendMethod(test,"Lean.Mass")
+    PhenStat:::recommendMethod(test,"Lean.Mass")
 }

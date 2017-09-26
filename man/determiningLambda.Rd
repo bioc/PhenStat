@@ -11,7 +11,9 @@
     5.  Requires a function that will be fitted determined from formulaAssessingBoxCox
 }
 \usage{
-    determiningLambda(phenList, depVariable, equation="withWeight")
+    determiningLambda(phenList, 
+					depVariable, 
+					equation="withWeight")
 }
 \arguments{
         \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}       
@@ -30,8 +32,8 @@
 \author{Natasha Karp}
 \examples{
         file <- system.file("extdata", "test1.csv", package="PhenStat")
-        test <- PhenList(dataset=read.csv(file),
+        test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
                 testGenotype="Sparc/Sparc")
-        determiningLambda(test,"Lean.Mass",equation="withoutWeight")
+        PhenStat:::determiningLambda(test,"Lean.Mass",equation="withoutWeight")
 }    
 \keyword{internal}

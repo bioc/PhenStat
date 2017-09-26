@@ -57,10 +57,10 @@
 
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
     # "testDataset" function calls "PhenTestResult" function internally
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             equation="withoutWeight",
             depVariable="Lean.Mass")
     class(result)

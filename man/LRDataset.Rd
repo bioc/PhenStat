@@ -5,9 +5,13 @@
     Prepares dataset for the LR framework - maps values of dependent variable to 0/1, where 1 is modeled. 
 }    
 \usage{
-    LRDataset(phenList = NULL, depVariable = NULL, abnormalValues =
-            c("abnormal", "Abnormal", "TRUE", "deviant"),
-            outputMessages = TRUE)
+LRDataset(
+  phenList = NULL,
+  depVariable = NULL,
+  abnormalValues =
+    c("abnormal", "Abnormal", "TRUE", "deviant"),
+  outputMessages = TRUE
+)
 }
 \arguments{
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}       
@@ -30,7 +34,7 @@
 
 \examples{
     file <- system.file("extdata", "testLR.csv", package="PhenStat")
-    testLR <- PhenList(dataset=read.csv(file),
+    testLR <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Mock")
-    testLR2 <- LRDataset(testLR,"V2")
+    testLR2 <- PhenStat:::LRDataset(testLR,"V2")
 }

@@ -1,14 +1,15 @@
 Package: PhenStat
 Type: Package
 Title: Statistical analysis of phenotypic data
-Version: 2.11.0
-Date: 2016-07-22
-Author: Natalja Kurbatova, Natasha Karp, Jeremy Mason, Hamed Haselimashhadi
+Version: 2.12.0
+Date: 2017-09-27
+Author: Natalja Kurbatova, Natasha Karp, Jeremy Mason, Hamed Haselimashhadi 
 Maintainer: Hamed Haselimashhadi <hamedhm@ebi.ac.uk>
-Depends: R (>= 2.3.0)
-Imports: methods, car, nlme, nortest, MASS, logistf
+Depends: R (>= 3.4.1)
+Imports: SmoothWin, methods, car, nlme, nortest, MASS, msgps, logistf, knitr, tools, pingr, ggplot2, reshape, corrplot, graph, lme4, graphics, grDevices, utils, stats
 Suggests: RUnit, BiocGenerics
 Description: Package contains methods for statistical analysis of phenotypic data.
 License: file LICENSE
-
-
+NeedsCompilation: no
+Packaged: 2017-09-20 23:21:47 UTC; biocbuild
+biocViews: StatisticalMethod

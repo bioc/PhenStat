@@ -7,9 +7,14 @@
     Males only, Females only, All.
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "htestPhenStat")}}{
             %%  Returns full name of subset
         }
     }}
 \keyword{methods}
+
+
+\value{
+    This function returns full name of subset that was analysed by RR or FE framework.
+}

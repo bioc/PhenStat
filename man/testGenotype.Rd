@@ -6,7 +6,7 @@
     Method \code{testGenotype} returns test genotype
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns test genotype
         }
@@ -15,3 +15,7 @@
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns test genotype.
+}

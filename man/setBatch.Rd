@@ -6,9 +6,13 @@
     Method \code{setBatch} sets batch column in the dataset
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Sets batch column
         }
     }}
 \keyword{methods}
+
+\value{
+    This function sets batch column in the dataset.
+}

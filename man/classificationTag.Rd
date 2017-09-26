@@ -5,8 +5,10 @@
     Returns a classification tag to assign a sexual dimorphism assessment of the phenotypic change.
 }
 \usage{
-    classificationTag(phenTestResult, userMode = "summaryOutput", 
-            phenotypeThreshold = 0.01,outputMessages=TRUE)
+    classificationTag(phenTestResult, 
+					userMode = "summaryOutput",
+					phenotypeThreshold = 0.01,
+					outputMessages=TRUE)
 }
 \arguments{
     \item{phenTestResult}{instance of the \code{\linkS4class{PhenTestResult}} class that comes from the function 
@@ -40,13 +42,13 @@
 \seealso{\code{\linkS4class{PhenTestResult}}}
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             depVariable="Lean.Mass")
-    classificationTag(result, 
+    PhenStat:::classificationTag(result, 
             userMode="summaryOutput", 
             phenotypeThreshold=0.001)
-    classificationTag(result, 
+    PhenStat:::classificationTag(result, 
             userMode="vectorOutput")
 }

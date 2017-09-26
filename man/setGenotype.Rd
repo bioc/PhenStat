@@ -6,9 +6,13 @@
     Method \code{setGenotype} sets genotype column in the dataset
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Sets genotype column
         }
     }}
 \keyword{methods}
+
+\value{
+    This function sets genotype column in the dataset.
+}

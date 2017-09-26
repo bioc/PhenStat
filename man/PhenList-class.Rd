@@ -104,20 +104,20 @@ The PhenList object can be created by using function \code{\link{PhenList}}.}
 
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
     class(test)
     
     file <- system.file("extdata", "test2.csv", package="PhenStat")
-    test2 <- PhenList(dataset=read.csv(file),
+    test2 <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Arid4a/Arid4a",
             refGenotype="+/+",
             hemiGenotype="Arid4a/+",
             dataset.colname.weight="Weight.Value")
-    getStat(test2)
-    testGenotype(test2)
-    refGenotype(test2)
-    hemiGenotype(test2)
+    PhenStat:::getStat(test2)
+    PhenStat:::testGenotype(test2)
+    PhenStat:::refGenotype(test2)
+    PhenStat:::hemiGenotype(test2)
 }
 
 \keyword{methods}

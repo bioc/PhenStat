@@ -6,9 +6,13 @@
     Method \code{getColumnView} returns RR or FE frameworks results in a column format
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "htestPhenStat")}}{
             %%  Returns result in a column format
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns RR or FE frameworks results in a column format
+}

@@ -6,9 +6,13 @@
     Method \code{setWeight} sets weight column in the dataset
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Sets weight column
         }
     }}
 \keyword{methods}
+
+\value{
+    This function sets weight column in the dataset.
+}

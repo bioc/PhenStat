@@ -24,7 +24,7 @@
 \author{Natalja Kurbatova, Natasha Karp, Jeremy Mason}
 \seealso{\code{\linkS4class{PhenTestResult}}}
 \examples{
-    formula <- modelFormula(equation="withWeight",
+    formula <- PhenStat:::modelFormula(equation="withWeight",
             numberofsexes=2, 
             depVariable="Lean.Mass")
 }

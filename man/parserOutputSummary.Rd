@@ -23,10 +23,10 @@
 \seealso{\code{\linkS4class{PhenTestResult}}}
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
-    result <- testDataset(test,
+    result <- PhenStat:::testDataset(test,
             depVariable="Lean.Mass")
-    linearRegressionOutput <- analysisResults(result)
-    parserOutputSummary(linearRegressionOutput)
+    linearRegressionOutput <- PhenStat:::analysisResults(result)
+    PhenStat:::parserOutputSummary(linearRegressionOutput)
 }

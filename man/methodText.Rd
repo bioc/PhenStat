@@ -6,9 +6,13 @@
     Method \code{methodText} returns method's name, for example: "Reference Range Plus", "Linear Mixed Model".
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenTestResult")}}{
             %%  Returns method's name
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns returns method's name.
+}

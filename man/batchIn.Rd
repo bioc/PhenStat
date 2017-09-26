@@ -20,3 +20,7 @@
 }
 }}
 \keyword{methods}
+
+\value{
+    TRUE/FALSE
+}

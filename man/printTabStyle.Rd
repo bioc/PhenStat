@@ -21,12 +21,12 @@
 \author{Natalja Kurbatova}
 \examples{
     row_sep <- rep("----------",3)
-    print(printTabStyle(row_sep,11))
+    print(PhenStat:::printTabStyle(row_sep,11))
     list1 <- c("Owner","Model","Cc")
-    print(printTabStyle(list1,11))
-    print(printTabStyle(row_sep,11))
+    print(PhenStat:::printTabStyle(list1,11))
+    print(PhenStat:::printTabStyle(row_sep,11))
     list2 <- c("Natalja","Honda","125")
-    print(printTabStyle(list2,11))
-    print(printTabStyle(row_sep,11))
+    print(PhenStat:::printTabStyle(list2,11))
+    print(PhenStat:::printTabStyle(row_sep,11))
 }    
 \keyword{internal}

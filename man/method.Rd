@@ -6,9 +6,12 @@
     Method \code{method} returns method abbriviation, for example: "RR", "MM".
 }
 \section{Methods}{
-    \describe{       
+    \describe{
         \item{\code{signature(obj = "PhenTestResult")}}{
             %%  Returns method abbriviation
         }
     }}
 \keyword{methods}
+\value{
+    This function returns returns method abbriviation.
+}

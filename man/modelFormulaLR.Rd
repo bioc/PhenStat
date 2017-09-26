@@ -5,7 +5,11 @@
     Creates formula for the start Mixed Model based on equation and number of sexes in the data.
 }
 \usage{    
-    modelFormulaLR(numberofsexes, depVariable, sexIncluded, dimorphismIncluded, IncludeBatch)
+    modelFormulaLR(numberofsexes,
+               depVariable,
+               sexIncluded,
+               dimorphismIncluded,
+               IncludeBatch)
 }
 \arguments{
     \item{numberofsexes}{a numerical value for levels of sex in the dataset (1 or 2); mandatory argument} 
@@ -26,7 +30,7 @@
 \author{Natalja Kurbatova, Natasha Karp, Jeremy Mason}
 \seealso{\code{\linkS4class{PhenTestResult}}}
 \examples{
-    formula <- modelFormulaLR(numberofsexes=2, 
+    formula <- PhenStat:::modelFormulaLR(numberofsexes=2, 
             depVariable="Lean.Mass",TRUE,TRUE,"No")
 }
 \keyword{internal}

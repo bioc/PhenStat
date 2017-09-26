@@ -10,14 +10,18 @@
 }
 \section{Methods}{
     \describe{
-        
+
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns  TRUE/FALSE values depending on weight column presence/absence
         }
-        
+
         \item{\code{signature(obj = "PhenTestResult")}}{
             %%  Returns  TRUE/FALSE values depending on weight column presence/absence
         }
     }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+
+\value{
+    TRUE/FALSE
+}
+

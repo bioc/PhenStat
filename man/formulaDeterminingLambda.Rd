@@ -6,7 +6,10 @@
     the data with in estimating the lambda for a Box-Cox transformation
 }
 \usage{
-    formulaDeterminingLambda(noSexes, depVariable, multipleBatches, equation)
+    formulaDeterminingLambda(noSexes, 
+							depVariable, 
+							multipleBatches, 
+							equation)
 }
 \arguments{
     \item{noSexes}{number of sexes in the data; mandatory argument}       

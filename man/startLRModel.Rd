@@ -19,7 +19,10 @@
     
 }    
 \usage{
-    startLRModel(phenList, depVariable, outputMessages=TRUE, pThreshold=0.05)
+    startLRModel(phenList,
+					 depVariable,
+					 outputMessages = TRUE,
+					 pThreshold = 0.05)
 }
 \arguments{
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}       
@@ -42,18 +45,18 @@
 \seealso{\code{\linkS4class{PhenList}}}
 \examples{
     file <- system.file("extdata", "testLR.csv", package="PhenStat")
-    testLR <- PhenList(dataset=read.csv(file),
+    testLR <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Mock")
-    testLR2 <- LRDataset(testLR,"V2")
+    testLR2 <- PhenStat:::LRDataset(testLR,"V2")
     
     # when "testDataset" function's argument "callAll" is set to FALSE 
     # only "startLRModel" function is called - the first step of LR framework
-    resultLR <- testDataset(testLR2,
+    resultLR <- PhenStat:::testDataset(testLR2,
             depVariable="V2",
             callAll=FALSE,
             method="LR")
     # print out formula that has been created
-    analysisResults(resultLR)$model.formula.genotype
+    PhenStat:::analysisResults(resultLR)$model.formula.genotype
     # print out batch effect's significance 
-    analysisResults(resultLR)$model.effect.batch
+    PhenStat:::analysisResults(resultLR)$model.effect.batch
 }

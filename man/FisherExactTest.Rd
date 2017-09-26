@@ -20,7 +20,9 @@
     The funciton is called from "testDataset" function when "method" argument is set to "FE" meaning "Fisher Exact Test".
 }
 \usage{
-    FisherExactTest(phenList, depVariable, outputMessages=TRUE)
+    FisherExactTest(phenList, 
+					depVariable, 
+					outputMessages=TRUE)
 }
 \arguments{   
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}
@@ -41,10 +43,10 @@
 \seealso{\code{\linkS4class{PhenTestResult}}}
 \examples{
     file <- system.file("extdata", "test_categorical.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Aff3/Aff3")
     # "FisherExactTest" function is called from "testDataset" function.
-    result <- testDataset(test,depVariable="Thoracic.Processes",method="FE")  
+    result <- PhenStat:::testDataset(test,depVariable="Thoracic.Processes",method="FE")  
     # Fisher Exact Test results can be printed out using function "summaryOutput"
-    summaryOutput(result)
+    summary(result)
 }

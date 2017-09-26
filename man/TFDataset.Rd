@@ -6,7 +6,10 @@
     Returns dataset suitable for TF framework or original dataset if data removal was not successful. 
 }    
 \usage{
-    TFDataset(phenList, depVariable, outputMessages=TRUE, forDecisionTree = FALSE)
+    TFDataset(phenList,
+          depVariable,
+          outputMessages = TRUE,
+          forDecisionTree = FALSE)
 }
 \arguments{
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}       
@@ -31,7 +34,7 @@
 
 \examples{
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenStat:::PhenList(dataset=read.csv(file,na.strings = '-'),
             testGenotype="Sparc/Sparc")
-    test2 <- TFDataset(test,"Lean.Mass")
+    test2 <- PhenStat:::TFDataset(test,"Lean.Mass")
 }

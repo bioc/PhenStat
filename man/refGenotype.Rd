@@ -6,7 +6,7 @@
     Method \code{refGenotype} returns reference genotype
 }
 \section{Methods}{
-    \describe{      
+    \describe{
         \item{\code{signature(obj = "PhenList")}}{
             %%  Returns reference genotype
         }
@@ -16,3 +16,7 @@
         }
     }}
 \keyword{methods}
+
+\value{
+    This function returns reference genotype.
+}

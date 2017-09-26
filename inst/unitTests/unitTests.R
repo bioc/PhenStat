@@ -9,7 +9,7 @@
 ###############################################################################
 # basic checks
 test_columnChecks <- function() {    
-    data_categorical <- read.csv("PhenStat/inst/extdata/test_categorical.csv")
+    data_categorical <- read.csv("PhenStat/inst/extdata/test_categorical.csv",na.strings = "-")
     test <- PhenList(dataset=data_categorical,testGenotype="Aff3/Aff3",outputMessages=FALSE)
     output <- columnChecks(getDataset(test), "Weight", 4) 
     output2 <- columnChecks(getDataset(test), "Number.Of.Digits", 8) 
@@ -32,7 +32,7 @@ test_PhenList <- function() {
 ###############################################################################
 # PhenList object with one sex
 test_oneSex <- function(){
-    data_oneSex <- read.csv("PhenStat/inst/extdata/test1_1sex.csv")
+    data_oneSex <- read.csv("PhenStat/inst/extdata/test1_1sex.csv",na.strings = "-")
     test <- PhenList(dataset=data_oneSex,testGenotype="Mysm1/+",outputMessages=FALSE)
     checkEquals(length(levels(getDataset(test)$Sex)),1,paste("length of sex levels is not equals to 1",
                     " - it realises there is only one gender",sep=""))
@@ -40,7 +40,7 @@ test_oneSex <- function(){
 ###############################################################################
 # Fisher Exact Test generates appropriate classificationTag output
 test_FEOutput <- function(){
-    data_categorical <- read.csv("PhenStat/inst/extdata/test_categorical.csv")
+    data_categorical <- read.csv("PhenStat/inst/extdata/test_categorical.csv",na.strings = "-")
     test <- PhenList(dataset=data_categorical,testGenotype="Aff3/Aff3",outputMessages=FALSE)
     result <- testDataset(test,depVariable="Skull.Shape",method="FE",outputMessages=FALSE)
     checkEquals(length(classificationTag(result)),1, "length of classificationTag output is not 1")
@@ -53,7 +53,7 @@ test_FEOutput <- function(){
 # testDataset functionality - exception when there are not enough data, 
 # switch to Fisher Exact Test when there are categorical data to analyse
 test_testDataset <- function(){
-    data_categorical=read.csv("PhenStat/inst/extdata/test_categorical.csv")
+    data_categorical=read.csv("PhenStat/inst/extdata/test_categorical.csv",na.strings = "-")
     test <- PhenList(dataset=data_categorical,testGenotype="Aff3/Aff3",outputMessages=FALSE)    
     # Switch from MM to FE for categorical data
     checkEquals(method(testDataset(test,depVariable="Skull.Shape",method="MM")), "FE", 
@@ -72,7 +72,7 @@ test_testDataset <- function(){
 # vectorOutput
 test_vectorOutput <- function(){
     #file <- system.file("extdata", "test4.csv", package="PhenStat")
-    data_typical <- read.csv("PhenStat/inst/extdata/test4.csv")
+    data_typical <- read.csv("PhenStat/inst/extdata/test4.csv",na.strings = "-")
     test <- PhenList(dataset=data_typical,testGenotype="Mysm1/+", dataset.clean=TRUE)
     result <- testDataset(test,depVariable="Lean.Mass")
     vector_results <- vectorOutput(result)   
@@ -87,7 +87,7 @@ test_generateGraphs <- function(){
     #file <- system.file("extdata", "test4.csv", package="PhenStat")
     dirName <- ".graphics"
     # MM
-    data_typical <- read.csv("PhenStat/inst/extdata/test4.csv")
+    data_typical <- read.csv("PhenStat/inst/extdata/test4.csv",na.strings = "-")
     test <- PhenList(dataset=data_typical,testGenotype="Mysm1/+", dataset.clean=TRUE,outputMessages=FALSE)
     result <- testDataset(test,depVariable="Lean.Mass",outputMessages=FALSE)
     dir.create(dirName, showWarnings = FALSE)
@@ -96,7 +96,7 @@ test_generateGraphs <- function(){
     unlink(dirName, recursive = TRUE)
     ## TF
     file <- system.file("extdata", "test7_TFE.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenList(dataset=read.csv(file,na.strings = "-"),
             testGenotype="het",
             refGenotype = "WT",
             dataset.colname.sex="sex",
@@ -117,7 +117,7 @@ test_generateGraphs <- function(){
     unlink(dirName, recursive = TRUE)
     ## RR
     file <- system.file("extdata", "test1.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenList(dataset=read.csv(file,na.strings = "-"),
         testGenotype="Sparc/Sparc",outputMessages=FALSE)
     # "RRTest" function is called from "testDataset" function
     result_RR <- testDataset(test,
@@ -129,7 +129,7 @@ test_generateGraphs <- function(){
     unlink(dirName, recursive = TRUE)
     ## FE
     file <- system.file("extdata", "test_categorical.csv", package="PhenStat")
-    test <- PhenList(dataset=read.csv(file),
+    test <- PhenList(dataset=read.csv(file,na.strings = "-"),
         testGenotype="Aff3/Aff3",outputMessages=FALSE)
     result_FE <- testDataset(test,depVariable="Thoracic.Processes",method="FE",outputMessages=FALSE)
     dir.create(dirName, showWarnings = FALSE)
@@ -140,7 +140,7 @@ test_generateGraphs <- function(){
 ###############################################################################
 # test unit for TF function - lack of concurrent controls
 test_TFOutput <- function(){
-    data_typical <- read.csv("PhenStat/inst/extdata/test4.csv")
+    data_typical <- read.csv("PhenStat/inst/extdata/test4.csv",na.strings = "-")
     test <- PhenList(dataset=data_typical,testGenotype="Mysm1/+", dataset.clean=TRUE,outputMessages=FALSE)
     checkException(testDataset(test,depVariable="Lean.Mass",method="TF"),
         "testDataset fails with check for sufficient data in TF framework")
@@ -153,7 +153,7 @@ test_TFOutput <- function(){
 ###############################################################################
 # test unit for trasnformation function
 test_transformation <- function(){
-    data1 <- read.csv("PhenStat/inst/extdata/permutationTest.csv")
+    data1 <- read.csv("PhenStat/inst/extdata/permutationTest.csv",na.strings = "-")
     test <- PhenList(dataset=data1,testGenotype="Kcne2/Kcne2", 
         dataset.colname.weight="Weight.Value",
         dataset.clean=TRUE,outputMessages=FALSE)
