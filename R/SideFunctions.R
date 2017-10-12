@@ -130,9 +130,9 @@ PhengridSearch = function(PhenStatTestDataObject,
           pch = inn + 1,
           main = paste(
             'l=',
-            round(lp, 2),
+            round(lp, 3),
             ', k=',
-            round(kp, 2),
+            round(kp, 3),
             ', #=',
             sum(inn),
             sep = ''

@@ -19,6 +19,7 @@
 ## (output from functions testDataset and buildFinalModel)
 vectorOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
 {
+  digit = 100
   depVariable <- getVariable(phenTestResult)
   analysisResults <- analysisResults(phenTestResult)
   #noSexes <- length(levels(analysedDataset(phenTestResult)$Sex))
@@ -50,7 +51,7 @@ vectorOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
     columnOfInterest <- x[, c(depVariable)]
     variability = paste('"variability":', round(length(unique(
       columnOfInterest
-    )) / length(columnOfInterest), digits = 3), sep = "")
+    )) / length(columnOfInterest), digits = digit), sep = "")
 
     Genotype_levels = levels(x$Genotype)
     Sex_levels = levels(x$Sex)
@@ -94,14 +95,14 @@ vectorOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
           "Female: ",
           round(
             analysisResults$model.output.percentageChanges[1],
-            digits = 2
+            digits = digit
           ),
           "%",
           ", ",
           "Male: ",
           round(
             analysisResults$model.output.percentageChanges[2],
-            digits = 2
+            digits = digit
           ),
           "%",
           sep = ""
@@ -114,7 +115,7 @@ vectorOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
             "Female: ",
             round(
               analysisResults$model.output.percentageChanges[1],
-              digits = 2
+              digits = digit
             ),
             "%",
             ", ",
@@ -130,7 +131,7 @@ vectorOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
           "Male: ",
           round(
             analysisResults$model.output.percentageChanges[1],
-            digits = 2
+            digits = digit
           ),
           "%",
           sep = ""

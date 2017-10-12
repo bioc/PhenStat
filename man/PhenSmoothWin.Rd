@@ -5,7 +5,7 @@
 Complementary function for "testDataset" that allows soft windowing
 }
 \description{
-  Running this function allows a range of windowing on the analysis.  The bandwidth and sharpness of the window are controlled by two parameters l and k respectively.
+  Running this function allows a range of windowing on the analysis method.  The bandwidth and sharpness of the window are controlled by two parameters l and k respectively.
 }
 \usage{
 PhenSmoothWin(
@@ -24,25 +24,25 @@ PhenSmoothWin(
   the output of testDataset function
 }
   \item{l}{
-  a positive vector of at least two values for the bandwidth parameter. The function searches for the best window among this values. For example, l=1:10 searches for the optimal windows in the radius of 10 (20 units since the l is symmetric).
+  a positive vector of at least one value for the bandwidth parameter. The function searches for the best window among these values. For example, l=1:10 searches for the optimal windows in the radius of 10 (20 units since the l is symmetric).
 }
   \item{k}{
-  a positive vector of at least two values for the shape parameter. The function searches for the optimal sharpness among this values.
+  a positive vector of at least one value for the shape parameter. The function searches for the optimal sharpness among these values.
 }
   \item{min.obs}{
-  the minimum observation that must be included in the window. the default is 50
+  the minimum number of observations that must be included in the window. The default is 50
 }
   \item{criteria}{
   select among 'AICc', 'BIC', 'GCV' and 'Cp' for the penalized change point selection criteria. The default is 'AICc'
   }
   \item{method}{
-  select between 'enet' and 'alasso' for the lasso and adaptive-lasso in the penalized change point detection algorithm. The default is 'enet'
+  select between 'enet' and 'alasso' for the lasso and adaptive-lasso respectively in the penalized change point detection algorithm. The default is 'enet'
   }
   \item{threshold}{
   a single value. The threshold for the weighting function that pushes the weights to zero. Default is 10^-18
 }
   \item{plot}{
-  logical flag. Setting to true shows some plots. Data must be sorted on Batch to get neat plots.
+  logical flag. Setting to TRUE shows some plots. Data must be sorted on Batch to get neat plots.
 }
 }
 
@@ -67,6 +67,9 @@ PhenSmoothWin(
   Hamed Haselimashhadi <hamedhm@eb.ac.uk>
 }
 
+\note{
+	*** Hard windowing can be achieved by fixing "l"" to the bandwidth of interest and setting "k" to a big value such as 20.
+}
 
 \seealso{
  \code{\link{testDataset}}
@@ -87,9 +90,10 @@ PhenSmoothWin(
     SofWinresult = PhenSmoothWin(
       testDatasetObj = result,
       plot = TRUE,
-      l = 1:5,
-      k = 1:5
+      l = 10,
+      k = 5
     )
+    SofWinresult$finalModel$models[[1]]
 }
 \keyword{SoftWindowing }
 \keyword{HardWindowing }

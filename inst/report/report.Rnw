@@ -2892,9 +2892,9 @@ if(varType == 'continuous'){
       difM[, i] = c(rep(0, i-1), rep(1, ly-i+1))
     }
     resSigPro     = msgps(X = difM, as.vector(deTimeY-mean(deTimeY)), intercept = FALSE)
-    changePoints  = round(coef(resSigPro),2)
+    changePoints  = round(coef(resSigPro),6)
     plot(deTimeY, type='l', ylab=TargetResponse0, xlab='Index',...)
-    NonZeroCP     = sort(which(changePoints[, 4]!=0),decreasing = TRUE)[1:5]#We choose the max of 5 CP
+    NonZeroCP     = sort(which(changePoints[, 1]!=0),decreasing = TRUE)[1:5]#We choose the max of 5 CP
     lNonZeroCP    = length(NonZeroCP)
     abline(v      = NonZeroCP, col=3, lty=3,
            lwd    = pmin(rank(NonZeroCP),5)

@@ -208,6 +208,7 @@ summaryOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
 ## Function for linear regression output
 printLROutput <- function(phenTestResult, phenotypeThreshold = 0.01)
 {
+  digit = 100
   linearRegressionOutput <- analysisResults(phenTestResult)
 
   if (linearRegressionOutput$model.effect.interaction == TRUE) {
@@ -264,11 +265,11 @@ printLROutput <- function(phenTestResult, phenotypeThreshold = 0.01)
       "Genotype effect",
       original_scale,
       ": ",
-      sprintf("%.4f", round(effectValues[1], digits =
-                              4)),
+      sprintf("%.6e", round(effectValues[1], digits =
+                              digit)),
       " +/- ",
-      sprintf("%.4f", abs(round(
-        effectValues[2], digits = 4
+      sprintf("%.6e", abs(round(
+        effectValues[2], digits = digit
       ))),
       sep = ""
     ))
@@ -279,11 +280,11 @@ printLROutput <- function(phenTestResult, phenotypeThreshold = 0.01)
         "Genotype by male effect",
         original_scale,
         ": ",
-        sprintf("%.4f", round(as.numeric(effectValues[1]), digits =
-                                4)),
+        sprintf("%.6e", round(as.numeric(effectValues[1]), digits =
+                                digit)),
         " +/- ",
-        sprintf("%.4f", abs(round(
-          as.numeric(effectValues[2]), digits = 4
+        sprintf("%.6e", abs(round(
+          as.numeric(effectValues[2]), digits = digit
         ))),
         sep = ""
       )
@@ -293,11 +294,11 @@ printLROutput <- function(phenTestResult, phenotypeThreshold = 0.01)
         "Genotype by female effect",
         original_scale,
         ": ",
-        sprintf("%.4f", round(as.numeric(effectValues[3]), digits =
-                                4)),
+        sprintf("%.6e", round(as.numeric(effectValues[3]), digits =
+                                digit)),
         " +/- ",
-        sprintf("%.4f", abs(round(
-          as.numeric(effectValues[4]), digits = 4
+        sprintf("%.6e", abs(round(
+          as.numeric(effectValues[4]), digits = digit
         ))),
         sep = ""
       )
@@ -349,7 +350,13 @@ printLROutput <- function(phenTestResult, phenotypeThreshold = 0.01)
             digits = 2
           )
         ),
-        "%")
+        "%"," [exact : ",
+		 round(
+            linearRegressionOutput$model.output.percentageChanges[1],
+            digits = digit
+          ),
+		  "]"		
+		)
       }
       else {
         message(paste(
@@ -358,8 +365,14 @@ printLROutput <- function(phenTestResult, phenotypeThreshold = 0.01)
             linearRegressionOutput$model.output.percentageChanges[1],
             digits = 2
           )
-        ), "%")
-
+        ), "%",
+		" [exact : ",
+		 round(
+            linearRegressionOutput$model.output.percentageChanges[1],
+            digits = digit
+          ),
+		  "]"		
+		)
       }
     }
   }

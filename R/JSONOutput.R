@@ -19,6 +19,7 @@
 ## (output from functions testDataset and buildFinalModel)
 JSONOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
 {
+  digit = 100
   depVariable <- getVariable(phenTestResult)
   analysisResults <- analysisResults(phenTestResult)
   noSexes <- length(levels(analysedDataset(phenTestResult)$Sex))
@@ -74,7 +75,7 @@ JSONOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
       ' values":',
       round(length(unique(
         columnOfInterest
-      )) / length(columnOfInterest), digits = 3),
+      )) / length(columnOfInterest), digits = digit),
       sep = ""
     )
 
@@ -120,14 +121,14 @@ JSONOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
           '"Female":"',
           round(
             analysisResults$model.output.percentageChanges[1],
-            digits = 2
+            digits = digit
           ),
           '%"',
           ", ",
           '"Male":"',
           round(
             analysisResults$model.output.percentageChanges[2],
-            digits = 2
+            digits = digit
           ),
           '%"',
           sep = ""
@@ -140,7 +141,7 @@ JSONOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
             '"Female":"',
             round(
               analysisResults$model.output.percentageChanges[1],
-              digits = 2
+              digits = digit
             ),
             '%"',
             ", ",
@@ -156,7 +157,7 @@ JSONOutput <- function(phenTestResult, phenotypeThreshold = 0.01)
           '"Male":"',
           round(
             analysisResults$model.output.percentageChanges[1],
-            digits = 2
+            digits = digit
           ),
           '%"',
           sep = ""

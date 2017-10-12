@@ -20,6 +20,7 @@
 FisherExactTest <-
   function(phenList, depVariable, outputMessages = TRUE)
   {
+  digit = 100
     x <- getDataset(phenList)
     resultList <- list()
     indexList <- 1
@@ -57,7 +58,7 @@ FisherExactTest <-
       for (j in 1:length(depVariable_levels)) {
         ES_matrix_all[j, i] <- round((count_matrix_all[j, i] /
                                         colSums(count_matrix_all)[i]) * 100, digits =
-                                       0)
+                                       digit)
       }
 
     }
@@ -147,10 +148,10 @@ FisherExactTest <-
         for (j in 1:length(depVariable_levels)) {
           ES_matrix_male[j, i] = round((count_matrix_male[j, i] /
                                           colSums(count_matrix_male)[i]) * 100, digits =
-                                         0)
+                                         digit)
           ES_matrix_female[j, i] = round((count_matrix_female[j, i] /
                                             colSums(count_matrix_female)[i]) * 100, digits =
-                                           0)
+                                           digit)
         }
 
       }
@@ -159,7 +160,7 @@ FisherExactTest <-
         ES_matrix_female[j, 3] = abs(ES_matrix_female[j, 1] - ES_matrix_female[j, 2])
       }
 
-      ES_male <- round(max(ES_matrix_male[, 3]), digits = 0)
+      ES_male   <- round(max(ES_matrix_male  [, 3]), digits = 0)
       ES_female <- round(max(ES_matrix_female[, 3]), digits = 0)
 
       colnames(count_matrix_female) <- Genotype_levels

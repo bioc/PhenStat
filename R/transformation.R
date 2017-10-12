@@ -116,7 +116,7 @@ determiningLambda <-
     lambda_CI = range(boxcox_out$x[boxcox_out$y > max(boxcox_out$y) - qchisq(0.95, 1) /
                                      2])
     #determine the midepoint of the 95% confidence interval
-    midpoint = round(boxcox_out$x[which.max(boxcox_out$y)], digits = 4)  #(lambda_CI[2]+lambda_CI[1])/2
+    midpoint = round(boxcox_out$x[which.max(boxcox_out$y)], digits = 5)  #(lambda_CI[2]+lambda_CI[1])/2
 
     #if the lambda value is close to zero then it reverts to a log transfomration.
     # I have arbituarily chosen |0.1| as threshold (Natasha Karp).

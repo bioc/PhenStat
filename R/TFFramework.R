@@ -23,6 +23,7 @@ TFDataset <-
            outputMessages = TRUE,
            forDecisionTree = FALSE)
   {
+	digit = 100
     stop_message <- ""
     ## START CHECK ARGUMENTS
     # 1
@@ -182,12 +183,18 @@ TFDataset <-
           "Records removed (reference genotype): ",
           round(countsRemovedRef * 100 / countsAll),
           "%",
+		  " [exact : ",
+		  round(countsRemovedRef * 100 / countsAll , digits = digit),
+		  "%]",
           sep = ""
         ))
         message(paste(
           "Records removed (test genotype): ",
           round(countsRemovedTest * 100 / countsAll),
-          "%\n",
+          "%",
+		  " [exact : ",
+		  round(countsRemovedTest * 100 / countsAll, digits = digit),
+		  "%]\n",
           sep = ""
         ))
       }

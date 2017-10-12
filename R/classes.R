@@ -125,6 +125,7 @@ setGeneric("getStat",
 setMethod("getStat", signature(obj = "PhenList"),
           function(obj)
           {
+		  digit = 100
             ## Calculate statistics
             dataset.stat <- data.frame(
               Variables = colnames(getDataset(obj)),
@@ -146,7 +147,7 @@ setMethod("getStat", signature(obj = "PhenList"),
                     (length(unique(x)) / length(x) > 0.05))
                   round(mean(na.omit(
                     x
-                  )), digits = 2)
+                  )), digits = digit)
                 else
                   NA),
               StdDev = sapply(getDataset(obj), function(x)
@@ -154,7 +155,7 @@ setMethod("getStat", signature(obj = "PhenList"),
                     (length(unique(x)) / length(x) > 0.05))
                   round(sd(na.omit(
                     x
-                  )), digits = 2)
+                  )), digits = digit)
                 else
                   NA),
               Minimum = sapply(getDataset(obj), function(x)
@@ -162,7 +163,7 @@ setMethod("getStat", signature(obj = "PhenList"),
                     (length(unique(x)) / length(x) > 0.05))
                   round(min(na.omit(
                     x
-                  )), digits = 2)
+                  )), digits = digit)
                 else
                   NA),
               Maximum = sapply(getDataset(obj), function(x)
@@ -170,7 +171,7 @@ setMethod("getStat", signature(obj = "PhenList"),
                     (length(unique(x)) / length(x) > 0.05))
                   round(max(na.omit(
                     x
-                  )), digits = 2)
+                  )), digits = digit)
                 else
                   NA)
             )
@@ -806,12 +807,13 @@ matrixCount = function(obj)
 # Show method for htest
 setMethod(show, signature(object = "htestPhenStat"),
           function(object) {
+		  digit = 100
             if (length(comparison(object)) > 0) {
               result <- matrix(0, 4, 1)
               result[1] <- subsetText(object)
               result[2] <- comparison(object)
               result[3] <-
-                sprintf("%.4f", round(pvalue(object), digits = 4))
+                sprintf("%.6e", round(pvalue(object), digits = digit))
               result[4] <-
                 paste(format(object@ES, nsmall = 0), "%", sep = "")
               rownames(result) <-
@@ -824,7 +826,7 @@ setMethod(show, signature(object = "htestPhenStat"),
               result <- matrix(0, 3, 1)
               result[1] <- subsetText(object)
               result[2] <-
-                sprintf("%.4f", round(pvalue(object), digits = 4))
+                sprintf("%.6e", round(pvalue(object), digits = digit))
               result[3] <-
                 paste(format(object@ES, nsmall = 0), "%", sep = "")
               rownames(result) <-
@@ -853,15 +855,16 @@ setGeneric("getMatrix",
              standardGeneric("getMatrix"))
 setMethod("getMatrix", signature(obj = "htestPhenStat"),
           function(obj, phenotypeThreshold = 0.01) {
+		  digit = 100
             result <- matrix(0, 2, 1)
             result[1] <-
-              sprintf("%.4f", round(pvalue(obj), digits = 4))
+              sprintf("%.6e", round(pvalue(obj), digits = digit))
             result[2] <-
               paste(format(obj@ES, nsmall = 0), "%", sep = "")
             rownames(result) <- c("p-value:", "Effect size:")
             colnames(result) <- c("")
 
-            if (round(pvalue(obj), digits = 4) <= phenotypeThreshold) {
+            if (round(pvalue(obj), digits = digit) <= phenotypeThreshold) {
               rownames(result)[1] <- paste("*", rownames(result)[1])
               rownames(result)[2] <-
                 paste("*", rownames(result)[2])
@@ -879,9 +882,10 @@ setGeneric("getColumnView",
              standardGeneric("getColumnView"))
 setMethod("getColumnView", signature(obj = "htestPhenStat"),
           function(obj) {
+		  digit = 100
             return(c(
               subsetText(obj),
-              sprintf("%.4f", round(pvalue(obj), digits = 4)),
+              sprintf("%.6e", round(pvalue(obj), digits = digit)),
               paste(format(obj@ES, nsmall = 0), "%", sep =
                       "")
             ))

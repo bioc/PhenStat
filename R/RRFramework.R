@@ -24,6 +24,7 @@ RRTest <- function(phenList,
                    controlPointsThreshold = 60)
 
 {
+ digit = digitP = 100
   x <- getDataset(phenList)
   resultList <- list()
   indexList <- 1
@@ -212,22 +213,22 @@ RRTest <- function(phenList,
   count_matrix_all[3, 2] <- countsHigh_mutant_all
   ES_matrix_all[1, 1] <-
     round((count_matrix_all[1, 1] / colSums(count_matrix_all)[1]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all[2, 1] <-
     round((count_matrix_all[2, 1] / colSums(count_matrix_all)[1]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all[3, 1] <-
     round((count_matrix_all[3, 1] / colSums(count_matrix_all)[1]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all[1, 2] <-
     round((count_matrix_all[1, 2] / colSums(count_matrix_all)[2]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all[2, 2] <-
     round((count_matrix_all[2, 2] / colSums(count_matrix_all)[2]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all[3, 2] <-
     round((count_matrix_all[3, 2] / colSums(count_matrix_all)[2]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all[1, 3] <-
     abs(ES_matrix_all[1, 1] - ES_matrix_all[1, 2])
   ES_matrix_all[2, 3] <-
@@ -253,16 +254,16 @@ RRTest <- function(phenList,
     countsNormal_mutant_all + countsHigh_mutant_all
   ES_matrix_all_nh[1, 1] <-
     round((count_matrix_all_nh[1, 1] / colSums(count_matrix_all_nh)[1]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nh[2, 1] <-
     round((count_matrix_all_nh[2, 1] / colSums(count_matrix_all_nh)[1]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nh[1, 2] <-
     round((count_matrix_all_nh[1, 2] / colSums(count_matrix_all_nh)[2]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nh[2, 2] <-
     round((count_matrix_all_nh[2, 2] / colSums(count_matrix_all_nh)[2]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nh[1, 3] <-
     abs(ES_matrix_all_nh[1, 1] - ES_matrix_all_nh[1, 2])
   ES_matrix_all_nh[2, 3] <-
@@ -297,16 +298,16 @@ RRTest <- function(phenList,
     countsNormal_mutant_all + countsLow_mutant_all
   ES_matrix_all_nl[1, 1] <-
     round((count_matrix_all_nl[1, 1] / colSums(count_matrix_all_nl)[1]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nl[2, 1] <-
     round((count_matrix_all_nl[2, 1] / colSums(count_matrix_all_nl)[1]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nl[1, 2] <-
     round((count_matrix_all_nl[1, 2] / colSums(count_matrix_all_nl)[2]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nl[2, 2] <-
     round((count_matrix_all_nl[2, 2] / colSums(count_matrix_all_nl)[2]) * 100, digits =
-            0)
+            digit)
   ES_matrix_all_nl[1, 3] <-
     abs(ES_matrix_all_nl[1, 1] - ES_matrix_all_nl[1, 2])
   ES_matrix_all_nl[2, 3] <-
@@ -368,22 +369,22 @@ RRTest <- function(phenList,
     count_matrix_female[3, 2] <- countsHigh_mutant_females
     ES_matrix_male[1, 1] <-
       round((count_matrix_male[1, 1] / colSums(count_matrix_male)[1]) * 100, digits =
-              0)
+              digit)
     ES_matrix_male[2, 1] <-
       round((count_matrix_male[2, 1] / colSums(count_matrix_male)[1]) * 100, digits =
-              0)
+              digit)
     ES_matrix_male[3, 1] <-
       round((count_matrix_male[3, 1] / colSums(count_matrix_male)[1]) * 100, digits =
-              0)
+              digit)
     ES_matrix_male[1, 2] <-
       round((count_matrix_male[1, 2] / colSums(count_matrix_male)[2]) * 100, digits =
-              0)
+              digit)
     ES_matrix_male[2, 2] <-
       round((count_matrix_male[2, 2] / colSums(count_matrix_male)[2]) * 100, digits =
-              0)
+              digit)
     ES_matrix_male[3, 2] <-
       round((count_matrix_male[3, 2] / colSums(count_matrix_male)[2]) * 100, digits =
-              0)
+              digit)
     ES_matrix_male[1, 3] <-
       abs(ES_matrix_male[1, 1] - ES_matrix_male[1, 2])
     ES_matrix_male[2, 3] <-
@@ -395,19 +396,19 @@ RRTest <- function(phenList,
               0)
     ES_matrix_female[2, 1] <-
       round((count_matrix_female[2, 1] / colSums(count_matrix_female)[1]) * 100, digits =
-              0)
+              digit)
     ES_matrix_female[3, 1] <-
       round((count_matrix_female[3, 1] / colSums(count_matrix_female)[1]) * 100, digits =
-              0)
+              digit)
     ES_matrix_female[1, 2] <-
       round((count_matrix_female[1, 2] / colSums(count_matrix_female)[2]) * 100, digits =
-              0)
+              digit)
     ES_matrix_female[2, 2] <-
       round((count_matrix_female[2, 2] / colSums(count_matrix_female)[2]) * 100, digits =
-              0)
+              digit)
     ES_matrix_female[3, 2] <-
       round((count_matrix_female[3, 2] / colSums(count_matrix_female)[2]) * 100, digits =
-              0)
+              digit)
     ES_matrix_female[1, 3] <-
       abs(ES_matrix_female[1, 1] - ES_matrix_female[1, 2])
     ES_matrix_female[2, 3] <-
@@ -451,16 +452,16 @@ RRTest <- function(phenList,
       countsNormal_mutant_females + countsHigh_mutant_females
     ES_matrix_male_nh[1, 1] <-
       round((count_matrix_male_nh[1, 1] / colSums(count_matrix_male_nh)[1]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nh[2, 1] <-
       round((count_matrix_male_nh[2, 1] / colSums(count_matrix_male_nh)[1]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nh[1, 2] <-
       round((count_matrix_male_nh[1, 2] / colSums(count_matrix_male_nh)[2]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nh[2, 2] <-
       round((count_matrix_male_nh[2, 2] / colSums(count_matrix_male_nh)[2]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nh[1, 3] <-
       abs(ES_matrix_male_nh[1, 1] - ES_matrix_male_nh[1, 2])
     ES_matrix_male_nh[2, 3] <-
@@ -468,19 +469,19 @@ RRTest <- function(phenList,
     ES_matrix_female_nh[1, 1] <-
       round((
         count_matrix_female_nh[1, 1] / colSums(count_matrix_female_nh)[1]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nh[2, 1] <-
       round((
         count_matrix_female_nh[2, 1] / colSums(count_matrix_female_nh)[1]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nh[1, 2] <-
       round((
         count_matrix_female_nh[1, 2] / colSums(count_matrix_female_nh)[2]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nh[2, 2] <-
       round((
         count_matrix_female_nh[2, 2] / colSums(count_matrix_female_nh)[2]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nh[1, 3] <-
       abs(ES_matrix_female_nh[1, 1] - ES_matrix_female_nh[1, 2])
     ES_matrix_female_nh[2, 3] <-
@@ -545,16 +546,16 @@ RRTest <- function(phenList,
       countsNormal_mutant_females + countsLow_mutant_females
     ES_matrix_male_nl[1, 1] <-
       round((count_matrix_male_nl[1, 1] / colSums(count_matrix_male_nl)[1]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nl[2, 1] <-
       round((count_matrix_male_nl[2, 1] / colSums(count_matrix_male_nl)[1]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nl[1, 2] <-
       round((count_matrix_male_nl[1, 2] / colSums(count_matrix_male_nl)[2]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nl[2, 2] <-
       round((count_matrix_male_nl[2, 2] / colSums(count_matrix_male_nl)[2]) *
-              100, digits = 0)
+              100, digits = digit)
     ES_matrix_male_nl[1, 3] <-
       abs(ES_matrix_male_nl[1, 1] - ES_matrix_male_nl[1, 2])
     ES_matrix_male_nl[2, 3] <-
@@ -562,19 +563,19 @@ RRTest <- function(phenList,
     ES_matrix_female_nl[1, 1] <-
       round((
         count_matrix_female_nl[1, 1] / colSums(count_matrix_female_nl)[1]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nl[2, 1] <-
       round((
         count_matrix_female_nl[2, 1] / colSums(count_matrix_female_nl)[1]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nl[1, 2] <-
       round((
         count_matrix_female_nl[1, 2] / colSums(count_matrix_female_nl)[2]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nl[2, 2] <-
       round((
         count_matrix_female_nl[2, 2] / colSums(count_matrix_female_nl)[2]
-      ) * 100, digits = 0)
+      ) * 100, digits = digit)
     ES_matrix_female_nl[1, 3] <-
       abs(ES_matrix_female_nl[1, 1] - ES_matrix_female_nl[1, 2])
     ES_matrix_female_nl[2, 3] <-
@@ -628,15 +629,15 @@ RRTest <- function(phenList,
   # Combine the results
   results_all <- matrix(0, 4, 1)
   results_all[1] <-
-    sprintf("%.4f", round(p.adjust(
+    sprintf("%.6e", round(p.adjust(
       model_all_nh$p.value, method = "bonferroni", n = 2
-    ), 4))
+    ), digitP))
   results_all[2] <-
     paste(format(ES_all_nh, nsmall = 0), "%", sep = "")
   results_all[3] <-
-    sprintf("%.4f", round(p.adjust(
+    sprintf("%.6e", round(p.adjust(
       model_all_nl$p.value, method = "bonferroni", n = 2
-    ), 4))
+    ), digitP))
   results_all[4] <-
     paste(format(ES_all_nl, nsmall = 0), "%", sep = "")
   rownames(results_all) <-
@@ -686,16 +687,16 @@ RRTest <- function(phenList,
 
     results_male <- matrix(0, 4, 1)
     results_male[1] <-
-      sprintf("%.4f", round(
+      sprintf("%.6e", round(
         p.adjust(model_male_nh$p.value, method = "bonferroni", n = 2),
-        4
+        digits = digitP
       ))
     results_male[2] <-
       paste(format(ES_male_nh, nsmall = 0), "%", sep = "")
     results_male[3] <-
-      sprintf("%.4f", round(
+      sprintf("%.6e", round(
         p.adjust(model_male_nl$p.value, method = "bonferroni", n = 2),
-        4
+        digits = digitP
       ))
     results_male[4] <-
       paste(format(ES_male_nl, nsmall = 0), "%", sep = "")
@@ -710,16 +711,16 @@ RRTest <- function(phenList,
 
     results_female <- matrix(0, 4, 1)
     results_female[1] <-
-      sprintf("%.4f", round(
+      sprintf("%.6e", round(
         p.adjust(model_female_nh$p.value, method = "bonferroni", n = 2),
-        4
+        digits = digitP
       ))
     results_female[2] <-
       paste(format(ES_female_nh, nsmall = 0), "%", sep = "")
     results_female[3] <-
-      sprintf("%.4f", round(
+      sprintf("%.6e", round(
         p.adjust(model_female_nl$p.value, method = "bonferroni", n = 2),
-        4
+        digits = digitP
       ))
     results_female[4] <-
       paste(format(ES_female_nl, nsmall = 0), "%", sep = "")
