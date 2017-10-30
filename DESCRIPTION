@@ -1,7 +1,7 @@
 Package: PhenStat
 Type: Package
 Title: Statistical analysis of phenotypic data
-Version: 2.14.0
+Version: 2.15.0
 Date: 2017-09-27
 Author: Natalja Kurbatova, Natasha Karp, Jeremy Mason, Hamed Haselimashhadi 
 Maintainer: Hamed Haselimashhadi <hamedhm@ebi.ac.uk>
