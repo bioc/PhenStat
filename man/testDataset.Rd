@@ -29,7 +29,8 @@ testDataset(
           RR_controlPointsThreshold = 60,
           transformValues = FALSE,
           useUnfiltered = FALSE,
-          threshold = 10 ^ -18
+          threshold = 10 ^ -18,
+          check = 1
 )
 }
 \arguments{
@@ -61,6 +62,7 @@ testDataset(
     \item{useUnfiltered}{flag: "FALSE" value to use filtered dataset; "TRUE" value to use unfiltered dataset;
         default value FALSE}
     \item{threshold}{The threshold for the model weights to be considered as zero. It only works when method="MM" and modelWeight is not null. Default is 10^-18.}
+    \item{check}{Only useful when modelWeight is included. Select between 0, 1, 2 to impose different weighting strategies on the Linear Mixed model. check=1 (default) selects the weights that are greater than the threshold (above) and keeps the batches that include more than one single sample. check=2 keeps only the weights that are greater than the threshold but ignores the single sample batches. check=0 to disable the function.}
 }
 \value{
     Returns results stored in instance of the \code{\linkS4class{PhenTestResult}} class

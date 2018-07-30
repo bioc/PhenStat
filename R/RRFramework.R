@@ -642,10 +642,10 @@ RRTest <- function(phenList,
     paste(format(ES_all_nl, nsmall = 0), "%", sep = "")
   rownames(results_all) <-
     c(
-      "Low classification p-value:",
-      "Low classification effect size:",
-      "High classification p-value:",
-      "High classification effect size:"
+      "Low classification p-value",
+      "Low classification effect size",
+      "High classification p-value",
+      "High classification effect size"
     )
   colnames(results_all) <- c("")
 
@@ -678,10 +678,10 @@ RRTest <- function(phenList,
             sep = "")
     rownames(thresholds) <-
       c(
-        "Natural variation:",
-        "Min control points:",
-        "Normal values 'males only':",
-        "Normal values 'females only':"
+        "Natural variation",
+        "Min control points",
+        "Normal values 'males only'",
+        "Normal values 'females only'"
       )
     colnames(thresholds) <- c("")
 
@@ -702,10 +702,10 @@ RRTest <- function(phenList,
       paste(format(ES_male_nl, nsmall = 0), "%", sep = "")
     rownames(results_male) <-
       c(
-        "Low classification p-value:",
-        "Low classification effect size:",
-        "High classification p-value:",
-        "High classification effect size:"
+        "Low classification p-value",
+        "Low classification effect size",
+        "High classification p-value",
+        "High classification effect size"
       )
     colnames(results_male) <- c("")
 
@@ -726,10 +726,10 @@ RRTest <- function(phenList,
       paste(format(ES_female_nl, nsmall = 0), "%", sep = "")
     rownames(results_female) <-
       c(
-        "Low classification p-value:",
-        "Low classification effect size:",
-        "High classification p-value:",
-        "High classification effect size:"
+        "Low classification p-value",
+        "Low classification effect size",
+        "High classification p-value",
+        "High classification effect size"
       )
     colnames(results_female) <- c("")
   }
@@ -743,9 +743,9 @@ RRTest <- function(phenList,
             format(RR_right_all, nsmall = 3),
             sep = "")
     rownames(thresholds) <-
-      c("Natural variation:",
-        "Min control points:",
-        "Normal values 'all':")
+      c("Natural variation",
+        "Min control points",
+        "Normal values 'all'")
     colnames(thresholds) <- c("")
 
     results_male <- NULL

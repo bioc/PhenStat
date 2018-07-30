@@ -75,25 +75,27 @@ PhenSmoothWin(
  \code{\link{testDataset}}
 }
 \examples{
-    set.seed(123456)
-    par(ask=FALSE)
-    # Mixed Model framework
-    file    <- system.file("extdata", "test1.csv", package = "PhenStat")
-    csvFile <- read.csv(file, na.strings = '-')
-    data    <- csvFile[order(as.Date(csvFile$Assay.Date)), ]
-    test    <- PhenList(dataset = data,
-                        testGenotype = "Sparc/Sparc",
-                        outputMessages = FALSE)
-    result <- testDataset(test,
-                          depVariable = "Lean.Mass",
-                          outputMessages = FALSE)
-    SofWinresult = PhenSmoothWin(
-      testDatasetObj = result,
-      plot = TRUE,
-      l = 10,
-      k = 5
-    )
-    SofWinresult$finalModel$models[[1]]
+	\dontrun{
+	    set.seed(123456)
+	    par(ask=FALSE)
+	    # Mixed Model framework
+	    file    <- system.file("extdata", "test1.csv", package = "PhenStat")
+	    csvFile <- read.csv(file, na.strings = '-')
+	    data    <- csvFile[order(as.Date(csvFile$Assay.Date)), ]
+	    test    <- PhenList(dataset = data,
+	                        testGenotype = "Sparc/Sparc",
+	                        outputMessages = FALSE)
+	    result <- testDataset(test,
+	                          depVariable = "Lean.Mass",
+	                          outputMessages = FALSE)
+	    SofWinresult = PhenSmoothWin(
+	      testDatasetObj = result,
+	      plot = TRUE,
+	      l = 10,
+	      k = 5
+	    )
+	    SofWinresult$finalModel$models[[1]]
+	}
 }
 \keyword{SoftWindowing }
 \keyword{HardWindowing }
