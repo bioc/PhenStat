@@ -75,7 +75,6 @@ testDataset(
 }
 \author{Natalja Kurbatova, Natasha Karp, Jeremy Mason}
 \seealso{ \code{\linkS4class{PhenList}},
-          \code{\link{PhenSmoothWin}},
           \code{\link{plot.PhenTestResult}},
           \code{\link{plot.PhenList}}
           }

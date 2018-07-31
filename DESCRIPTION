@@ -13,5 +13,5 @@ Suggests: RUnit, BiocGenerics
 Description: Package contains methods for statistical analysis of phenotypic data.
 License: file LICENSE
 NeedsCompilation: no
-Packaged: 2018-07-30 17:06:32 UTC; hamedhm
+Packaged: 2018-07-31 09:12:34 UTC; hamedhm
 biocViews: StatisticalMethod

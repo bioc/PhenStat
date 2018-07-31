@@ -39,7 +39,6 @@ export(
   testDataset           ,
   PhenStatReport        ,
   analysisResults       ,
-  PhenSmoothWin         ,
   vectorOutput          ,
   summaryOutput         ,
   qqplotGenotype        ,
