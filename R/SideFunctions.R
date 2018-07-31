@@ -67,6 +67,7 @@ checkWeights <- function(w,
 												 n,
 												 threshold = 10 ^ -18,
 												 date  = NULL,
+												 normaliseWeights = FALSE,
 												 check = 1) {
 	if (!is.null(w)  && var(w) > threshold && check > 0) {
 		if (length(w) != n)
@@ -82,7 +83,11 @@ checkWeights <- function(w,
 		}
 		if (length(zw) > 0) {
 			r  = r[zw]
-			w  = w[zw] / sum(w[zw])
+			if (normaliseWeights) {
+				w  = w[zw] / sum(w[zw])
+			}	else{
+				w  = w[zw] #/ sum(w[zw])
+			}
 		} else{
 			message(
 				'\n * Model weights are ignored! ** weight may be all close to zero *** there may be all dates with single weight [can cause error in the mixed model] **** Setting check = 1 or check = 2 may solve the problem.\n'
