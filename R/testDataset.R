@@ -40,7 +40,8 @@ testDataset <-  function(phenList = NULL,
                          RR_controlPointsThreshold = 60,
                          transformValues = FALSE,
                          useUnfiltered = FALSE,
-                         threshold = 10 ^ -18)
+                         threshold = 10 ^ -18,
+												 check     = 1)
 {
   stop_message <- ""
   transformationRequired <- FALSE
@@ -294,8 +295,10 @@ testDataset <-  function(phenList = NULL,
         columnOfInterestBatchWeightAdjusted
     }
 
-
-
+    # HAMEd 21-05-2018 fixed the issue of only including Response/Genotype/Weight/Sex/Batch
+    if (sum(!names(phenList@datasetPL) %in% names(datasetToAnalyse)) > 0) {
+    	datasetToAnalyse = data.frame(datasetToAnalyse, phenList@datasetPL[, !names(phenList@datasetPL) %in% names(datasetToAnalyse)])
+    }
 
     phenListToAnalyse <-
       new(
@@ -679,19 +682,25 @@ testDataset <-  function(phenList = NULL,
 
     result <-
       startModel(
-        phenListToAnalyse,
-        depVariable,
-        equation,
-        outputMessages,
-        pThreshold,
-        keepList,
-        modelWeight,
-
+        phenList =phenListToAnalyse,
+        depVariable = depVariable,
+        equation = equation,
+        outputMessages = outputMessages,
+        pThreshold = pThreshold,
+        keepList = keepList,
+        modelWeight = modelWeight,
+        threshold = threshold ,
+        check = check
       )
 
     ## Perform all framework methods
     if (callAll && is(result, "PhenTestResult")) {
-      result <- finalModel(result, outputMessages)
+    	result <-
+    		finalModel(
+    			phenTestResult = result,
+    			outputMessages = outputMessages,
+    			modelWeight = modelWeight
+    		)
     }
 
   }

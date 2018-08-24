@@ -35,7 +35,8 @@
     startModel(phenList, depVariable,
             equation="withWeight", outputMessages=TRUE,
             pThreshold=0.05, keepList=NULL,modelWeight = NULL,
-            threshold = 10^-18)
+            threshold = 10^-18,
+            check = 1)
 }
 \arguments{
     \item{phenList}{instance of the \code{\linkS4class{PhenList}} class; mandatory argument}
@@ -50,6 +51,7 @@
         keep_weight, keep_sex, keep_interaction; default value NULL}
   \item{modelWeight}{a vector of positive values for weights in the mixed model. The sum of the values must be one.}
   \item{threshold}{a single positive value. The threshold for the ModelWeights to consider as zero (see modelWeight)}
+  \item{check}{Only useful when modelWeight is included. Select between 0, 1, 2 to impose different weighting strategies on the Linear Mixed model. check=1 (default) selects the weights that are greater than the threshold (above) and keeps the batches that include more than one single sample. check=2 keeps only the weights that are greater than the threshold but ignores the single sample batches. check=0 to disable the function.}
 
 }
 \value{

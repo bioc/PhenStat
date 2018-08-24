@@ -212,7 +212,7 @@ The package contains four statistical frameworks for the phenodeviants identific
 batch is normally distributed with defined variance. This framework can be used in case when you have controls
 measured over multiple batches and you ideally have knockout mice measured in multiple batches.
 The knockouts do not have to be concurrent with controls.
-\subitem \textbf{Soft Windowing}: when there is a change in the data variation or mean; or the experiment is spanned over a long period of time, one may suggest windowing on the data. Then, PhenStat answers to this need by providing a soft windowing routine that is capable or producing different window sizes as well as different shapes.
+% \subitem \textbf{Soft Windowing}: when there is a change in the data variation or mean; or the experiment is spanned over a long period of time, one may suggest windowing on the data. Then, PhenStat answers to this need by providing a soft windowing routine that is capable or producing different window sizes as well as different shapes.
 \subitem \textbf{Model weight}: PhenStat lets assigning arbitrary weights to the observations in the Mixed model. This requires a vector of weights, $\sum w_i=1$. to be assigned to the parameter, \emph{modelWeight}, in the main function \emph{tesDataset}.
 \item Time Fixed Effect framework estimates each batch effect to separate it from genotype. This framework can
 be used in case when there are up to 5 batches of the test genotype and concurrent controls approach had been used.
