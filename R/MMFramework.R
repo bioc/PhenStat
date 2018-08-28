@@ -59,17 +59,17 @@ startModel <- function(phenList,
 		date      =  x$Batch,
 		check = check
 	)
-	if (is.null(modelWeight) || is.null(mw$w)) {
+	WindowingActive = !(is.null(modelWeight) || is.null(mw$w))
+	if (WindowingActive) {
+		message('heterogeneous residual variances for genotype groups is replaced by model weights')
+		x              = x[mw$wInd,]
+		x$ModelWeight  = mw$w
+		FixV  = CombV = nlme::varFixed( ~ 1 / ModelWeight)
+		# CombV = varComb(varFixed( ~ 1 / ModelWeight), varIdent(form =  ~ 1 |
+		# 																											 	Genotype))
+	} else{
 		FixV  = NULL
 		CombV = nlme::varIdent(form =  ~ 1 | Genotype)
-	} else{
-		FixV  = nlme::varFixed(~ 1 / ModelWeight)
-		CombV = nlme::varComb(nlme::varIdent(form =  ~ 1 |
-														 	Genotype),
-										nlme::varFixed(~ 1 / ModelWeight))
-		x              = x[mw$wInd, ]
-		x$ModelWeight  = mw$w
-		#x     = droplevels(x)
 	}
 
 	numberofsexes <- length(levels(x$Sex))
@@ -182,12 +182,16 @@ startModel <- function(phenList,
 			## Hypothesis 2
 			## Null Hypothesis: all residual variances are equal
 			## Alternative Hypothesis: the residue variance is not equal
-			p.value.variance <-
-				(anova(model_MM, model_hetvariance)$"p-value"[2])
-			## The result of the test for Hypothesis 2 will help to select a
-			## covariance structure for the residuals
-			keep_equalvar <- p.value.variance > pThreshold
-
+			if (WindowingActive) {
+				p.value.variance = NA
+				keep_equalvar = FALSE
+			} else{
+				p.value.variance <-
+					(anova(model_MM, model_hetvariance)$"p-value"[2])
+				## The result of the test for Hypothesis 2 will help to select a
+				## covariance structure for the residuals
+				keep_equalvar <- p.value.variance > pThreshold
+			}
 		} else {
 			## No Batch effects
 			keep_batch <- FALSE
@@ -223,13 +227,16 @@ startModel <- function(phenList,
 			## Hypothesis 2
 			## Null Hypothesis: all residual variances are equal
 			## Alternative Hypothesis: the residue variance is not equal
-			p.value.variance <-
-				(anova(model_MM, model_hetvariance)$"p-value"[2])
-			## The result of the test for Hypothesis 2 will help to select a
-			## covariance structure for the residuals
-			keep_equalvar <- p.value.variance > pThreshold
-
-
+			if (WindowingActive) {
+				p.value.variance = NA
+				keep_equalvar = FALSE
+			} else{
+				p.value.variance <-
+					(anova(model_MM, model_hetvariance)$"p-value"[2])
+				## The result of the test for Hypothesis 2 will help to select a
+				## covariance structure for the residuals
+				keep_equalvar <- p.value.variance > pThreshold
+			}
 		}
 
 
@@ -386,7 +393,6 @@ startModel <- function(phenList,
 			if (numberofsexes == 2) {
 				if (equation == "withWeight") {
 					interactionTest <- anova(model, type = "marginal")$"p-value"[5]
-
 				}        else{
 					interactionTest <- anova(model, type = "marginal")$"p-value"[4]
 
@@ -491,6 +497,8 @@ startModel <- function(phenList,
 	warning = function(w) {
 		message(w)
 	})
+	# agg = c(as.list(environment()), list())
+	# save(agg, file = file.path(getwd(), 'superDebugAnalysis.Rdata'))
 	return(finalResult)
 
 }
@@ -539,230 +547,219 @@ modelFormula <- function(equation, numberofsexes, depVariable)
 ## Works with PhenTestResult object created by testDataset function.
 ## Builds final model based on the significance of different model effects,
 ## depVariable and equation stored in phenTestResult object (see testDataset.R).
-finalModel <- function(phenTestResult, outputMessages = TRUE)
-{
-	## Checks and stop messages
-	stop_message <- ""
+finalModel <-
+	function(phenTestResult,
+					 outputMessages = TRUE,
+					 modelWeight = NULL)
+	{
+		## Checks and stop messages
+		stop_message <- ""
 
-	## Check PhenTestResult object
-	if (is(phenTestResult, "PhenTestResult")) {
-		finalResult <- phenTestResult
-		linearRegressionOutput <- analysisResults(phenTestResult)
-		x <- analysedDataset(finalResult)
-		#####
-		mw = finalResult@modelWeight
-		if (is.null(mw$w)) {
-			FixV  = NULL
-			CombV = nlme::varIdent(form =  ~ 1 | Genotype)
-		} else{
-			FixV  = nlme::varFixed( ~ 1 / ModelWeight)
-			CombV = nlme::varComb(nlme::varIdent(form =  ~ 1 |
-															 	Genotype),
-											nlme::varFixed( ~ 1 / ModelWeight))
-		}
-		#####
-		depVariable <- getVariable(finalResult)
-		keep_weight <- linearRegressionOutput$model.effect.weight
-		keep_sex <- linearRegressionOutput$model.effect.sex
-		keep_interaction <-
-			linearRegressionOutput$model.effect.interaction
-		keep_batch <- linearRegressionOutput$model.effect.batch
-		keep_equalvar <-
-			linearRegressionOutput$model.effect.variance
-
-		## Stop function if there are no datasets to work with
-		if (is.null(x))
-			stop_message <-
-			"Error:\nPlease create a PhenList object first and run function 'testDataset'.\n"
-
-		## Stop function if there are no enough input parameters
-		if (is.null(linearRegressionOutput$equation) ||
-				is.null(depVariable) || is.null(keep_batch)
-				|| is.null(keep_equalvar)
-				|| is.null(keep_sex) || is.null(keep_interaction))
-			stop_message <-
-			"Error:\nPlease run function 'testDataset' first.\n"
-	}  else{
-		stop_message <-
-			"Error:\nPlease create a PhenTestResult object first.\n"
-	}
-
-
-
-	if (nchar(stop_message) > 0) {
-		if (outputMessages) {
-			message(stop_message)
-			opt <- options(show.error.messages = FALSE)
-			on.exit(options(opt))
-			stop()
-		}    else {
-			stop(stop_message)
-		}
-	}
-
-	## END Checks and stop messages
-
-
-	## Build final null model
-	## Goal:  to test fixed effects of the model and based on the output
-	## build the final null model formula for later
-	## testing - as a null model it automatically excludes genotype and
-	## interaction term.
-	## The anova function tests the fixed effects associated by treatment
-	## with a null hypothesis that the regression
-	## coefficients are equal to zero  and an alternative hypothesis that the
-	## regression coefficient are not equal to zero.
-	## If the p-values of these tests are less than 0.05 we reject the null
-	## and accept the alternative that the are
-	## significant components of the model and should be included.
-	## If no terms are significant a model can be build with just an
-	## intercept element this is specified as
-	## "model.formula <- as.formula(paste(depVariable, "~", "1"))"
-
-	## Null model: genotype is not significant
-	model_null.formula <- switch(
-		linearRegressionOutput$equation,
-		withWeight = {
-			## Eq.2
-			if (linearRegressionOutput$numberSexes == 2) {
-				if (!keep_sex) {
-					as.formula(paste(depVariable, "~", "Weight"))
-
-				} else{
-					as.formula(paste(depVariable, "~",
-													 paste("Sex", "Weight", sep = "+")))
-				}
+		## Check PhenTestResult object
+		if (is(phenTestResult, "PhenTestResult")) {
+			finalResult <- phenTestResult
+			linearRegressionOutput <- analysisResults(phenTestResult)
+			x <- analysedDataset(finalResult)
+			#####
+			mw = x$ModelWeight
+			if (!is.null(modelWeight) && !is.null(mw)) {
+				FixV  = CombV = nlme::varFixed( ~ 1 / ModelWeight)
+				# CombV = varComb(varFixed(~ 1 / ModelWeight) ,varIdent(form =  ~ 1 |
+				# 												 	Genotype)
+				#								)
 			} else{
-				as.formula(paste(depVariable, "~", "Weight"))
+				FixV  = NULL
+				CombV = nlme::varIdent(form =  ~ 1 | Genotype)
 			}
-		},
-		withoutWeight = {
-			## Eq.1
-			if (linearRegressionOutput$numberSexes == 2) {
-				if (!keep_sex && !keep_interaction) {
-					as.formula(paste(depVariable, "~", "1"))
-				} else{
-					as.formula(paste(depVariable, "~", "Sex"))
-				}
-			} else{
-				as.formula(paste(depVariable, "~", "1"))
+			#####
+			depVariable <- getVariable(finalResult)
+			keep_weight <- linearRegressionOutput$model.effect.weight
+			keep_sex <- linearRegressionOutput$model.effect.sex
+			keep_interaction <-
+				linearRegressionOutput$model.effect.interaction
+			keep_batch <- linearRegressionOutput$model.effect.batch
+			keep_equalvar <-
+				linearRegressionOutput$model.effect.variance
+
+			## Stop function if there are no datasets to work with
+			if (is.null(x))
+				stop_message <-
+				"Error:\nPlease create a PhenList object first and run function 'testDataset'.\n"
+
+			## Stop function if there are no enough input parameters
+			if (is.null(linearRegressionOutput$equation) ||
+					is.null(depVariable) || is.null(keep_batch)
+					|| is.null(keep_equalvar)
+					|| is.null(keep_sex) || is.null(keep_interaction))
+				stop_message <-
+				"Error:\nPlease run function 'testDataset' first.\n"
+		}  else{
+			stop_message <-
+				"Error:\nPlease create a PhenTestResult object first.\n"
+		}
+
+
+
+		if (nchar(stop_message) > 0) {
+			if (outputMessages) {
+				message(stop_message)
+				opt <- options(show.error.messages = FALSE)
+				on.exit(options(opt))
+				stop()
+			}    else {
+				stop(stop_message)
 			}
 		}
-	)
 
-	## Alternative model: genotype is significant
-	model_genotype.formula <-
-		switch(
+		## END Checks and stop messages
+
+
+		## Build final null model
+		## Goal:  to test fixed effects of the model and based on the output
+		## build the final null model formula for later
+		## testing - as a null model it automatically excludes genotype and
+		## interaction term.
+		## The anova function tests the fixed effects associated by treatment
+		## with a null hypothesis that the regression
+		## coefficients are equal to zero  and an alternative hypothesis that the
+		## regression coefficient are not equal to zero.
+		## If the p-values of these tests are less than 0.05 we reject the null
+		## and accept the alternative that the are
+		## significant components of the model and should be included.
+		## If no terms are significant a model can be build with just an
+		## intercept element this is specified as
+		## "model.formula <- as.formula(paste(depVariable, "~", "1"))"
+
+		## Null model: genotype is not significant
+		model_null.formula <- switch(
 			linearRegressionOutput$equation,
 			withWeight = {
 				## Eq.2
 				if (linearRegressionOutput$numberSexes == 2) {
-					if ((keep_sex && keep_weight && keep_interaction) |
-							(!keep_sex &&
-							 keep_weight && keep_interaction)) {
-						as.formula(paste(
-							depVariable,
-							"~",
-							paste("Sex", "Genotype:Sex", "Weight", sep = "+")
-						))
+					if (!keep_sex) {
+						as.formula(paste(depVariable, "~", "Weight"))
 
-					} else if (keep_sex &&
-										 keep_weight && !keep_interaction) {
-						as.formula(paste(
-							depVariable,
-							"~",
-							paste("Genotype", "Sex", "Weight", sep = "+")
-						))
-
-					} else if (!keep_sex &&
-										 keep_weight && !keep_interaction) {
+					} else{
 						as.formula(paste(depVariable, "~",
-														 paste("Genotype", "Weight", sep = "+")))
+														 paste("Sex", "Weight", sep = "+")))
 					}
-
 				} else{
-					as.formula(paste(depVariable, "~",
-													 paste("Genotype", "Weight", sep = "+")))
+					as.formula(paste(depVariable, "~", "Weight"))
 				}
 			},
 			withoutWeight = {
 				## Eq.1
 				if (linearRegressionOutput$numberSexes == 2) {
-					if (!keep_sex  && !keep_interaction) {
-						as.formula(paste(depVariable, "~", "Genotype"))
-					} else if ((keep_sex && keep_interaction) |
-										 (!keep_sex && keep_interaction)) {
-						as.formula(paste(
-							depVariable,
-							"~",
-							paste("Sex",  "Genotype:Sex", sep = "+")
-						))
-					} else if (keep_sex && !keep_interaction) {
-						as.formula(paste(depVariable, "~",
-														 paste("Genotype", "Sex", sep = "+")))
+					if (!keep_sex && !keep_interaction) {
+						as.formula(paste(depVariable, "~", "1"))
+					} else{
+						as.formula(paste(depVariable, "~", "Sex"))
 					}
 				} else{
-					as.formula(paste(depVariable, "~", paste("Genotype")))
+					as.formula(paste(depVariable, "~", "1"))
 				}
 			}
 		)
 
-	finalResult <- tryCatch({
-		## Test: genotype groups association with dependent variable
-		## Null Hypothesis: genotypes are not associated with dependent variable
-		## Alternative Hypothesis: genotypes are associated with dependent
-		## variable
-		if (keep_batch && keep_equalvar) {
-			model_genotype <-
-				do.call(
+		## Alternative model: genotype is significant
+		model_genotype.formula <-
+			switch(
+				linearRegressionOutput$equation,
+				withWeight = {
+					## Eq.2
+					if (linearRegressionOutput$numberSexes == 2) {
+						if ((keep_sex && keep_weight && keep_interaction) |
+								(!keep_sex &&
+								 keep_weight && keep_interaction)) {
+							as.formula(paste(
+								depVariable,
+								"~",
+								paste("Sex", "Genotype:Sex", "Weight", sep = "+")
+							))
+
+						} else if (keep_sex &&
+											 keep_weight && !keep_interaction) {
+							as.formula(paste(
+								depVariable,
+								"~",
+								paste("Genotype", "Sex", "Weight", sep = "+")
+							))
+
+						} else if (!keep_sex &&
+											 keep_weight && !keep_interaction) {
+							as.formula(paste(depVariable, "~",
+															 paste("Genotype", "Weight", sep = "+")))
+						}
+
+					} else{
+						as.formula(paste(depVariable, "~",
+														 paste("Genotype", "Weight", sep = "+")))
+					}
+				},
+				withoutWeight = {
+					## Eq.1
+					if (linearRegressionOutput$numberSexes == 2) {
+						if (!keep_sex  && !keep_interaction) {
+							as.formula(paste(depVariable, "~", "Genotype"))
+						} else if ((keep_sex && keep_interaction) |
+											 (!keep_sex && keep_interaction)) {
+							as.formula(paste(
+								depVariable,
+								"~",
+								paste("Sex",  "Genotype:Sex", sep = "+")
+							))
+						} else if (keep_sex && !keep_interaction) {
+							as.formula(paste(depVariable, "~",
+															 paste("Genotype", "Sex", sep = "+")))
+						}
+					} else{
+						as.formula(paste(depVariable, "~", paste("Genotype")))
+					}
+				}
+			)
+
+		finalResult <- tryCatch({
+			## Test: genotype groups association with dependent variable
+			## Null Hypothesis: genotypes are not associated with dependent variable
+			## Alternative Hypothesis: genotypes are associated with dependent
+			## variable
+			if (keep_batch && keep_equalvar) {
+				model_genotype <-
+					do.call(
+						"lme",
+						args = list(
+							fixed = model_genotype.formula,
+							random =  ~ 1 |
+								Batch,
+							data = x,
+							weights = FixV,
+							na.action = "na.omit",
+							method = "ML"
+						)
+					)
+
+				model_null <-
+					do.call(
+						"lme",
+						args = list(
+							fixed = model_null.formula,
+							data  = x,
+							weights =  FixV,
+							random =  ~ 1 |
+								Batch,
+							na.action = "na.omit",
+							method = "ML"
+						)
+					)
+				p.value <-
+					(anova(model_genotype, model_null)$"p-value"[2])
+
+			}
+			if (keep_batch && !keep_equalvar) {
+				model_genotype <- do.call(
 					"lme",
 					args = list(
 						fixed = model_genotype.formula,
-						random =  ~ 1 |
-							Batch,
-						data = x,
-						weights = FixV,
-						na.action = "na.omit",
-						method = "ML"
-					)
-				)
-
-			model_null <-
-				do.call(
-					"lme",
-					args = list(
-						fixed = model_null.formula,
-						data  = x,
-						weights =  FixV,
-						random =  ~ 1 |
-							Batch,
-						na.action = "na.omit",
-						method = "ML"
-					)
-				)
-			p.value <-
-				(anova(model_genotype, model_null)$"p-value"[2])
-
-		}
-		if (keep_batch && !keep_equalvar) {
-			model_genotype <- do.call(
-				"lme",
-				args = list(
-					fixed = model_genotype.formula,
-					random =  ~ 1 |
-						Batch,
-					data = x,
-					weights = CombV,
-					na.action = "na.omit",
-					method = "ML"
-				)
-			)
-
-			model_null <-
-				do.call(
-					"lme",
-					args = list(
-						fixed  = model_null.formula,
 						random =  ~ 1 |
 							Batch,
 						data = x,
@@ -772,25 +769,27 @@ finalModel <- function(phenTestResult, outputMessages = TRUE)
 					)
 				)
 
-			p.value <-
-				(anova(model_genotype, model_null)$"p-value"[2])
-		} else if (!keep_batch && !keep_equalvar) {
-			model_genotype <- do.call(
-				"gls",
-				args = list(
-					model = model_genotype.formula,
-					data  = x,
-					weights = CombV,
-					method = "ML",
-					na.action = "na.omit"
-				)
-			)
+				model_null <-
+					do.call(
+						"lme",
+						args = list(
+							fixed  = model_null.formula,
+							random =  ~ 1 |
+								Batch,
+							data = x,
+							weights = CombV,
+							na.action = "na.omit",
+							method = "ML"
+						)
+					)
 
-			model_null <-
-				do.call(
+				p.value <-
+					(anova(model_genotype, model_null)$"p-value"[2])
+			} else if (!keep_batch && !keep_equalvar) {
+				model_genotype <- do.call(
 					"gls",
 					args = list(
-						model = model_null.formula,
+						model = model_genotype.formula,
 						data  = x,
 						weights = CombV,
 						method = "ML",
@@ -798,276 +797,288 @@ finalModel <- function(phenTestResult, outputMessages = TRUE)
 					)
 				)
 
-			p.value <-
-				(anova(model_genotype, model_null)$"p-value"[2])
-		} else if (!keep_batch && keep_equalvar) {
-			model_genotype <- do.call(
-				"gls",
-				args = list(
-					model = model_genotype.formula,
-					data  = x,
-					weights = FixV,
-					method = "ML",
-					na.action = "na.omit"
-				)
-			)
+				model_null <-
+					do.call(
+						"gls",
+						args = list(
+							model = model_null.formula,
+							data  = x,
+							weights = CombV,
+							method = "ML",
+							na.action = "na.omit"
+						)
+					)
 
-			model_null <-
-				do.call(
+				p.value <-
+					(anova(model_genotype, model_null)$"p-value"[2])
+			} else if (!keep_batch && keep_equalvar) {
+				model_genotype <- do.call(
 					"gls",
 					args = list(
-						model = model_null.formula,
-						data = x,
+						model = model_genotype.formula,
+						data  = x,
 						weights = FixV,
 						method = "ML",
 						na.action = "na.omit"
 					)
 				)
 
-			p.value <-
-				(anova(model_genotype, model_null)$"p-value"[2])
-		}
-
-
-
-		## Final model version with na.exclude and REML method
-		if (keep_batch && keep_equalvar) {
-			## Model 1
-			model_genotype <-
-				do.call(
-					"lme",
-					args = list(
-						fixed = model_genotype.formula,
-						random =  ~ 1 |
-							Batch,
-						data = x,
-						weights =  FixV,
-						na.action = "na.exclude",
-						method = "REML"
+				model_null <-
+					do.call(
+						"gls",
+						args = list(
+							model = model_null.formula,
+							data = x,
+							weights = FixV,
+							method = "ML",
+							na.action = "na.omit"
+						)
 					)
-				)
-		} else if (keep_batch && !keep_equalvar) {
-			## Model 2
-			model_genotype <-
-				do.call(
-					"lme",
-					args = list(
-						fixed  = model_genotype.formula,
-						random =  ~ 1 |
-							Batch,
-						data = x,
-						weights = CombV,
-						na.action = "na.exclude",
-						method = "REML"
+
+				p.value <-
+					(anova(model_genotype, model_null)$"p-value"[2])
+			}
+
+
+
+			## Final model version with na.exclude and REML method
+			if (keep_batch && keep_equalvar) {
+				## Model 1
+				model_genotype <-
+					do.call(
+						"lme",
+						args = list(
+							fixed = model_genotype.formula,
+							random =  ~ 1 |
+								Batch,
+							data = x,
+							weights =  FixV,
+							na.action = "na.exclude",
+							method = "REML"
+						)
 					)
-				)
-		} else if (!keep_batch && !keep_equalvar) {
-			## Model 2A
-			model_genotype <-
-				do.call(
-					"gls",
-					args = list(
-						model = model_genotype.formula,
-						data  = x,
-						weights = CombV,
-						na.action = "na.exclude"
+			} else if (keep_batch && !keep_equalvar) {
+				## Model 2
+				model_genotype <-
+					do.call(
+						"lme",
+						args = list(
+							fixed  = model_genotype.formula,
+							random =  ~ 1 |
+								Batch,
+							data = x,
+							weights = CombV,
+							na.action = "na.exclude",
+							method = "REML"
+						)
 					)
-				)
-		} else if (!keep_batch && keep_equalvar) {
-			## Model 1A
-			model_genotype <-
-				do.call(
-					"gls",
-					args = list(
-						model = model_genotype.formula,
-						data  = x,
-						weights   = FixV,
-						na.action = "na.exclude"
+			} else if (!keep_batch && !keep_equalvar) {
+				## Model 2A
+				model_genotype <-
+					do.call(
+						"gls",
+						args = list(
+							model = model_genotype.formula,
+							data  = x,
+							weights = CombV,
+							na.action = "na.exclude"
+						)
 					)
-				)
-		}
+			} else if (!keep_batch && keep_equalvar) {
+				## Model 1A
+				model_genotype <-
+					do.call(
+						"gls",
+						args = list(
+							model = model_genotype.formula,
+							data  = x,
+							weights   = FixV,
+							na.action = "na.exclude"
+						)
+					)
+			}
 
 
-		## Store the results after the final MM modelling step
-		linearRegressionOutput$model.output <-
-			model_genotype
-		linearRegressionOutput$model.null <- model_null
-		linearRegressionOutput$model.output.genotype.nulltest.pVal <-
-			p.value
-		linearRegressionOutput$model.formula.null <-
-			model_null.formula
-		linearRegressionOutput$model.formula.genotype <-
-			model_genotype.formula
-		#linearRegressionOutput$model.effect.variance <- keep_equalvar
+			## Store the results after the final MM modelling step
+			linearRegressionOutput$model.output <-
+				model_genotype
+			linearRegressionOutput$model.null <- model_null
+			linearRegressionOutput$model.output.genotype.nulltest.pVal <-
+				p.value
+			linearRegressionOutput$model.formula.null <-
+				model_null.formula
+			linearRegressionOutput$model.formula.genotype <-
+				model_genotype.formula
+			#linearRegressionOutput$model.effect.variance <- keep_equalvar
 
 
 
-		## Parse modeloutput and choose output depending on model
-		linearRegressionOutput$model.output.summary <-
-			parserOutputSummary(linearRegressionOutput)
+			## Parse modeloutput and choose output depending on model
+			linearRegressionOutput$model.output.summary <-
+				parserOutputSummary(linearRegressionOutput)
 
-		# Percentage changes - is the ratio of the genotype effect for a sex relative to
-		# the wildtype signal for that variable for that sex - calculation
-		mean_list <-
-			linearRegressionOutput$model.output.averageRefGenotype
-		denominator <- mean_list[1]
+			# Percentage changes - is the ratio of the genotype effect for a sex relative to
+			# the wildtype signal for that variable for that sex - calculation
+			mean_list <-
+				linearRegressionOutput$model.output.averageRefGenotype
+			denominator <- mean_list[1]
 
-		if (linearRegressionOutput$numberSexes == 2) {
-			# without weight
-			if (is.na(linearRegressionOutput$model.output.summary['weight_estimate'])) {
-				if (!is.na(linearRegressionOutput$model.output.summary['sex_estimate']) &&
-						!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
-				{
-					denominator_f <-
-						linearRegressionOutput$model.output.summary['intercept_estimate']
-					denominator_m <-
-						linearRegressionOutput$model.output.summary['intercept_estimate'] +
-						linearRegressionOutput$model.output.summary['sex_estimate']
+			if (linearRegressionOutput$numberSexes == 2) {
+				# without weight
+				if (is.na(linearRegressionOutput$model.output.summary['weight_estimate'])) {
+					if (!is.na(linearRegressionOutput$model.output.summary['sex_estimate']) &&
+							!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
+					{
+						denominator_f <-
+							linearRegressionOutput$model.output.summary['intercept_estimate']
+						denominator_m <-
+							linearRegressionOutput$model.output.summary['intercept_estimate'] +
+							linearRegressionOutput$model.output.summary['sex_estimate']
+						denominator_f <- denominator
+						denominator_m <- denominator
+						ratio_f <-
+							linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator_f
+						ratio_m <-
+							linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator_m
+					}
+					else if (!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
+					{
+						#denominator <- linearRegressionOutput$model.output.summary['intercept_estimate']
+						ratio_f <-
+							linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator
+						ratio_m <-
+							linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator
+					}
+					else if (!is.na(linearRegressionOutput$model.output.summary['sex_estimate']))
+					{
+						denominator_f <-
+							linearRegressionOutput$model.output.summary['intercept_estimate']
+						denominator_m <-
+							linearRegressionOutput$model.output.summary['intercept_estimate'] +
+							linearRegressionOutput$model.output.summary['sex_estimate']
+						denominator_f <- denominator
+						denominator_m <- denominator
+						ratio_f <-
+							linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_f
+						ratio_m <-
+							linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_m
+					}
+					else
+					{
+						#denominator <- linearRegressionOutput$model.output.summary['intercept_estimate']
+						ratio_f <-
+							linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator
+						ratio_m <- ratio_f
+					}
+				}
+				# with weight
+				else{
+					mean_list <- linearRegressionOutput$model.output.averageRefGenotype
+					denominator_f <- mean_list[2]
+					denominator_m <- mean_list[3]
 					denominator_f <- denominator
 					denominator_m <- denominator
-					ratio_f <-
-						linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator_f
-					ratio_m <-
-						linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator_m
+					if (!is.na(linearRegressionOutput$model.output.summary['sex_estimate']) &&
+							!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
+					{
+						ratio_f <-
+							linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator_f
+						ratio_m <-
+							linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator_m
+					}
+					else if (!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
+					{
+						ratio_f <-
+							linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator_f
+						ratio_m <-
+							linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator_m
+					}
+					else
+					{
+						ratio_f <-
+							linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_f
+						ratio_m <-
+							linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_m
+					}
 				}
-				else if (!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
-				{
-					#denominator <- linearRegressionOutput$model.output.summary['intercept_estimate']
-					ratio_f <-
-						linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator
-					ratio_m <-
-						linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator
-				}
-				else if (!is.na(linearRegressionOutput$model.output.summary['sex_estimate']))
-				{
-					denominator_f <-
-						linearRegressionOutput$model.output.summary['intercept_estimate']
-					denominator_m <-
-						linearRegressionOutput$model.output.summary['intercept_estimate'] +
-						linearRegressionOutput$model.output.summary['sex_estimate']
-					denominator_f <- denominator
-					denominator_m <- denominator
-					ratio_f <-
-						linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_f
-					ratio_m <-
-						linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_m
-				}
-				else
-				{
+
+				linearRegressionOutput$model.output.percentageChanges <-
+					c(ratio_f * 100, ratio_m * 100)
+				names(linearRegressionOutput$model.output.percentageChanges) <-
+					c('female*genotype ratio', 'male*genotype ratio')
+				#finalOutput@result <- linearRegressionOutput
+				#finalResult <- finalOutput
+			}
+			else{
+				# without weight
+				if (is.na(linearRegressionOutput$model.output.summary['weight_estimate'])) {
 					#denominator <- linearRegressionOutput$model.output.summary['intercept_estimate']
 					ratio_f <-
 						linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator
-					ratio_m <- ratio_f
 				}
-			}
-			# with weight
-			else{
-				mean_list <- linearRegressionOutput$model.output.averageRefGenotype
-				denominator_f <- mean_list[2]
-				denominator_m <- mean_list[3]
-				denominator_f <- denominator
-				denominator_m <- denominator
-				if (!is.na(linearRegressionOutput$model.output.summary['sex_estimate']) &&
-						!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
-				{
+				# with weight
+				else{
+					#mean_list <- linearRegressionOutput$model.output.averageRefGenotype
+					#denominator <- mean_list[1]
 					ratio_f <-
-						linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator_f
-					ratio_m <-
-						linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator_m
+						linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator
 				}
-				else if (!is.na(linearRegressionOutput$model.output.summary['sex_FvKO_estimate']))
-				{
-					ratio_f <-
-						linearRegressionOutput$model.output.summary['sex_FvKO_estimate'] / denominator_f
-					ratio_m <-
-						linearRegressionOutput$model.output.summary['sex_MvKO_estimate'] / denominator_m
-				}
-				else
-				{
-					ratio_f <-
-						linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_f
-					ratio_m <-
-						linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator_m
-				}
+
+				linearRegressionOutput$model.output.percentageChanges <-
+					c(ratio_f * 100)
+				names(linearRegressionOutput$model.output.percentageChanges) <-
+					c('all*genotype ratio')
+
+			}
+			# end of percentage changes calculation
+
+
+			finalResult@analysisResults <-
+				linearRegressionOutput
+			## Assign MM quality of fit
+			finalResult@analysisResults$model.output.quality <-
+				testFinalModel(finalResult)
+			finalResult
+		},
+		# End of tryCatch statement - if fails try to suggest smth useful for the user
+		#error = function(e){}
+		error = function(error_mes) {
+			message(error_mes)
+			finalResult <- NULL
+			if (linearRegressionOutput$equation == "withWeight")
+				stop_message <-
+				paste(
+					"Error:\nCan't fit the model ",
+					format(model_genotype.formula),
+					". Try MM with equation 'withoutWeight'. ",
+					"Another option is jitter\n",
+					sep = ""
+				)
+			else
+				stop_message <-
+				paste(
+					"Error:\nCan't fit the model ",
+					format(model_genotype.formula),
+					". Try to add jitter or RR plus method.\n",
+					sep = ""
+				)
+
+			if (outputMessages) {
+				message(stop_message)
+				opt <- options(show.error.messages = FALSE)
+				on.exit(options(opt))
+				stop()
+			}
+			else {
+				stop(stop_message)
 			}
 
-			linearRegressionOutput$model.output.percentageChanges <-
-				c(ratio_f * 100, ratio_m * 100)
-			names(linearRegressionOutput$model.output.percentageChanges) <-
-				c('female*genotype ratio', 'male*genotype ratio')
-			#finalOutput@result <- linearRegressionOutput
-			#finalResult <- finalOutput
-		}
-		else{
-			# without weight
-			if (is.na(linearRegressionOutput$model.output.summary['weight_estimate'])) {
-				#denominator <- linearRegressionOutput$model.output.summary['intercept_estimate']
-				ratio_f <-
-					linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator
-			}
-			# with weight
-			else{
-				#mean_list <- linearRegressionOutput$model.output.averageRefGenotype
-				#denominator <- mean_list[1]
-				ratio_f <-
-					linearRegressionOutput$model.output.summary['genotype_estimate'] / denominator
-			}
-
-			linearRegressionOutput$model.output.percentageChanges <-
-				c(ratio_f * 100)
-			names(linearRegressionOutput$model.output.percentageChanges) <-
-				c('all*genotype ratio')
-
-		}
-		# end of percentage changes calculation
-
-
-		finalResult@analysisResults <-
-			linearRegressionOutput
-		## Assign MM quality of fit
-		finalResult@analysisResults$model.output.quality <-
-			testFinalModel(finalResult)
-		finalResult
-	},
-	# End of tryCatch statement - if fails try to suggest smth useful for the user
-	#error = function(e){}
-	error = function(error_mes) {
-		message(error_mes)
-		finalResult <- NULL
-		if (linearRegressionOutput$equation == "withWeight")
-			stop_message <-
-			paste(
-				"Error:\nCan't fit the model ",
-				format(model_genotype.formula),
-				". Try MM with equation 'withoutWeight'. ",
-				"Another option is jitter\n",
-				sep = ""
-			)
-		else
-			stop_message <-
-			paste(
-				"Error:\nCan't fit the model ",
-				format(model_genotype.formula),
-				". Try to add jitter or RR plus method.\n",
-				sep = ""
-			)
-
-		if (outputMessages) {
-			message(stop_message)
-			opt <- options(show.error.messages = FALSE)
-			on.exit(options(opt))
-			stop()
-		}
-		else {
-			stop(stop_message)
-		}
-
-	},
-	warning = function(w) {
-		message(w)
-	})
-	return(finalResult)
-}
+		},
+		warning = function(w) {
+			message(w)
+		})
+		return(finalResult)
+	}
 ##------------------------------------------------------------------------------
 ## Parses model output summary and returns in readable vector format
 parserOutputSummary <- function(linearRegressionOutput)

@@ -69,10 +69,11 @@ checkWeights <- function(w,
 												 date  = NULL,
 												 normaliseWeights = FALSE,
 												 check = 1) {
-	if (!is.null(w)  && var(w) > threshold && check > 0) {
+	if (!is.null(w)  &&  check > 0) {
 		if (length(w) != n)
 			stop('parameters mismatch! n!=length(w)')
 		r      = 1:n
+		l      = rep(TRUE,n)
 		date   = as.character(date)
 		zw     = which(abs(w) > threshold)
 		#### need at least 2 observations in a group
@@ -82,24 +83,27 @@ checkWeights <- function(w,
 			zw     = zw[date[zw] %in% MorTh1] # no singleDay-singleData
 		}
 		if (length(zw) > 0) {
-			r  = r[zw]
+			r      = r[zw]
 			if (normaliseWeights) {
 				w  = w[zw] / sum(w[zw])
 			}	else{
 				w  = w[zw] #/ sum(w[zw])
 			}
+			l[-zw] = FALSE
 		} else{
 			message(
 				'\n * Model weights are ignored! ** weight may be all close to zero *** there may be all dates with single weight [can cause error in the mixed model] **** Setting check = 1 or check = 2 may solve the problem.\n'
 			)
 			w = NULL # (w * 0 + 1) / n
 			r = 1:n
+			l = rep(TRUE,n)
 		}
 	} else{
 		w = NULL
 		r = 1:n
+		l = rep(TRUE,n)
 	}
-	return(list(w = w, wInd = r))
+	return(list(w = w, wInd = r, index = l))
 }
 
 
