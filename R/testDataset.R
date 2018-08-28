@@ -682,20 +682,25 @@ testDataset <-  function(phenList = NULL,
 
     result <-
       startModel(
-        phenListToAnalyse,
-        depVariable,
-        equation,
-        outputMessages,
-        pThreshold,
-        keepList,
-        modelWeight,
-        threshold ,
-        check
+        phenList =phenListToAnalyse,
+        depVariable = depVariable,
+        equation = equation,
+        outputMessages = outputMessages,
+        pThreshold = pThreshold,
+        keepList = keepList,
+        modelWeight = modelWeight,
+        threshold = threshold ,
+        check = check
       )
 
     ## Perform all framework methods
     if (callAll && is(result, "PhenTestResult")) {
-      result <- finalModel(result, outputMessages)
+    	result <-
+    		finalModel(
+    			phenTestResult = result,
+    			outputMessages = outputMessages,
+    			modelWeight = modelWeight
+    		)
     }
 
   }
