@@ -23,9 +23,13 @@ vectorOutput <-
 					 othercolumns = NULL,
 					 quote  = '"' )
 	{
-		as.character0 = function(x,...){
-			if(!is.numeric(x) ){
-				x = as.character(x)
+		as.character0 = function(x, ...) {
+			if (!is.null(x)) {
+				if (!is.numeric(x)) {
+					x = as.character(x)
+				}
+			} else{
+				x = "NA" #HAMED 11/02/2019
 			}
 			return(x)
 		}
@@ -79,7 +83,6 @@ vectorOutput <-
 			'"multibatch_in_analysis":"Data contains multi batches"',
 			'"multibatch_in_analysis":"Data contains single batch"'
 		)
-
 		if (method(phenTestResult) %in% c("MM", "TF")) {
 			equation <- switch(analysisResults$equation,
 												 withoutWeight = {
@@ -230,7 +233,9 @@ vectorOutput <-
 					paste(framework, ", ", fittingMethod, equation, sep = ""),
 					as.character0(depVariable),
 					as.character0(analysisResults$model.effect.batch),
+					as.character0(analysisResults$model.batch.pvalue),    #HAMED 2/1/2019
 					as.character0(analysisResults$model.effect.variance),
+					as.character0(analysisResults$model.variance.pvalue), #HAMED 2/1/2019
 					as.character0(analysisResults$model.output.genotype.nulltest.pVal),
 					as.character0(analysisResults$model.output.summary["genotype_estimate"]),
 					as.character0(analysisResults$model.output.summary["genotype_estimate_SE"]),
@@ -262,7 +267,9 @@ vectorOutput <-
 				"Method",
 				"Dependent variable",
 				"Batch included",
+				"Batch p-val",  #HAMED 2/1/2019
 				"Residual variances homogeneity",
+				"Residual variances homogeneity p-val",  #HAMED 2/1/2019
 				"Genotype contribution",
 				"Genotype estimate",
 				"Genotype standard error",
@@ -508,7 +515,9 @@ vectorOutput <-
 								 RR = "Reference Ranges Plus framework"),
 					as.character0(depVariable),
 					"NA",
+					"NA", #HAMED 2/1/2019
 					"NA",
+					"NA", #HAMED 2/1/2019
 					"NA",
 					ES_all,
 					"NA",
@@ -549,7 +558,9 @@ vectorOutput <-
 				"Method",
 				"Dependent variable",
 				"Batch included",
+				"Batch p-val",  #HAMED 2/1/2019
 				"Residual variances homogeneity",
+				"Residual variances homogeneity p-val",  #HAMED 2/1/2019
 				"Genotype contribution",
 				"Genotype estimate",
 				"Genotype standard error",
@@ -615,7 +626,9 @@ vectorOutput <-
 				"Logistic Regression framework",
 				as.character0(depVariable),
 				as.character0(analysisResults$model.effect.batch),
+				as.character0(analysisResults$model.batch.pvalue),    #HAMED 2/1/2019
 				"NA",
+				"NA", #HAMED 2/1/2019
 				as.character0(analysisResults$model.output.genotype.nulltest.pVal),
 				as.character0(analysisResults$model.output.summary["genotype_estimate"]),
 				as.character0(analysisResults$model.output.summary["genotype_estimate_SE"]),
@@ -647,7 +660,9 @@ vectorOutput <-
 				"Method",
 				"Dependent variable",
 				"Batch included",
+				"Batch p-val",  #HAMED 2/1/2019
 				"Residual variances homogeneity",
+				"Residual variances homogeneity p-val",  #HAMED 2/1/2019
 				"Genotype contribution",
 				"Genotype estimate",
 				"Genotype standard error",
